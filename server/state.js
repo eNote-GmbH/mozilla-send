@@ -2,9 +2,11 @@ const config = require('./config');
 const layout = require('./layout');
 const assets = require('../common/assets');
 const getTranslator = require('./locale');
+const mozlog = require('./log');
 const { getFxaConfig } = require('./fxa');
 const fs = require('fs');
 const path = require('path');
+const log = mozlog('send.download');
 
 module.exports = async function(req) {
   const locale = (() => {
@@ -24,8 +26,10 @@ module.exports = async function(req) {
     try {
       authConfig = await getFxaConfig();
       authConfig.client_id = config.fxa_client_id;
+      authConfig.fxa_required = config.fxa_required;
     } catch (e) {
-      // continue without accounts
+      log.warn('fxa_required is set but no config was found', e);
+      throw e;
     }
   }
   const prefs = {};
