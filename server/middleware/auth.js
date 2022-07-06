@@ -1,8 +1,9 @@
 const assert = require('assert');
 const crypto = require('crypto');
+const mozlog = require('../log');
 const storage = require('../storage');
-const config = require('../config');
 const fxa = require('../fxa');
+const log = mozlog('send.download');
 
 module.exports = {
   hmac: async function(req, res, next) {
@@ -72,10 +73,30 @@ module.exports = {
       req.user = await fxa.verify(token);
     }
 
-    if (config.fxa_required && !req.user) {
-      res.sendStatus(401);
-    } else {
-      next();
+    if (!req.user) {
+      log.warn('Invalid or expired OAuth token');
+      return res.sendStatus(401);
     }
+
+    // handle permissions...
+    const id = req.params.id;
+    if (id) {
+      // a request to a file...
+      const meta = await storage.metadata(id);
+      if (!meta || !meta.auth) {
+        return res.sendStatus(404);
+      }
+
+      const metaAuth = Buffer.from(meta.auth, 'utf8');
+      const userAuth = Buffer.from(req.user, 'utf8');
+      if (!crypto.timingSafeEqual(metaAuth, userAuth)) {
+        log.warn('User not allowed to view file');
+        return res.sendStatus(403);
+      }
+
+      req.meta = meta;
+    }
+
+    next();
   }
 };
