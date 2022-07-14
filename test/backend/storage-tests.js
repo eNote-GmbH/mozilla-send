@@ -131,7 +131,9 @@ describe('Storage', function() {
         auth: 'foo',
         metadata: 'bar',
         nonce: 'baz',
-        owner: 'bmo'
+        owner: 'bmo',
+        user: 'bus',
+        contentType: 'image/gif'
       };
       await storage.set('x', null, m);
       const meta = await storage.metadata('x');

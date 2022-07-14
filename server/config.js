@@ -43,6 +43,11 @@ const conf = convict({
     default: false,
     env: 'S3_USE_PATH_STYLE_ENDPOINT'
   },
+  s3_logging_enabled: {
+    format: Boolean,
+    default: false,
+    env: 'S3_LOGGING_ENABLED'
+  },
   gcs_bucket: {
     format: String,
     default: '',
@@ -354,6 +359,35 @@ const conf = convict({
       format: String,
       default: '',
       env: 'UI_CUSTOM_CSS'
+    }
+  },
+  log: {
+    app: {
+      format: String,
+      default: 'FirefoxSend',
+      env: 'LOG_APP_NAME'
+    },
+    level: {
+      format: String,
+      default: 'info',
+      env: 'LOG_LEVEL'
+    },
+    fmt: {
+      format: ['heka', 'pretty'],
+      default: 'pretty',
+      env: 'LOG_FORMAT'
+    }
+  },
+  access_log: {
+    enabled: {
+      format: Boolean,
+      default: false,
+      env: 'ACCESS_LOG_ENABLED'
+    },
+    fmt: {
+      format: ['combined', 'common', 'dev', 'short', 'tiny'],
+      default: 'tiny',
+      env: 'ACCESS_LOG_FORMAT'
     }
   }
 });
