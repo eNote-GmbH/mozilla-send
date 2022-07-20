@@ -107,6 +107,14 @@ class DB {
     const result = await this.redis.hgetallAsync(id);
     return result && new Metadata({ id, ...result }, this);
   }
+
+  async allOwnerMetadata(ownerId) {
+    // TO DO. Query Redis for all data from a specific user
+    const result = await this.redis.hgetallAsync(ownerId);
+    return result.map(item => {
+      return result && new Metadata({ ownerId, ...item }, this);
+    });
+  }
 }
 
 module.exports = new DB(config);
