@@ -4,7 +4,7 @@ const mozlog = require('../log');
 const createRedisClient = require('./redis');
 
 function getPrefix(seconds) {
-  return Math.max(Math.floor(seconds / 86400), 1);
+  return seconds === 0 ? -1 : Math.max(Math.floor(seconds / 86400), 1);
 }
 
 class DB {
@@ -68,7 +68,9 @@ class DB {
     if (meta) {
       this.redis.hmset(id, meta);
     }
-    this.redis.expire(id, expireSeconds);
+    if (expireSeconds > 0) {
+      this.redis.expire(id, expireSeconds);
+    }
   }
 
   setField(id, key, value) {
