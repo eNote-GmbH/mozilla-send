@@ -7,6 +7,10 @@ function getPrefix(seconds) {
   return Math.max(Math.floor(seconds / 86400), 1);
 }
 
+function fileInfoPrefix(field, id) {
+  return `${field}:${id}`;
+}
+
 class DB {
   constructor(config) {
     let Storage = null;
@@ -66,7 +70,24 @@ class DB {
     await this.storage.set(filePath, file);
     this.redis.hset(id, 'prefix', prefix);
     if (meta) {
+      const uploadTime = Date.now();
       this.redis.hmset(id, meta);
+      if (meta.user && meta.user.uid) {
+        this.redis.hset(meta.user.uid, fileInfoPrefix('id', id), id);
+        this.redis.hset(
+          meta.user.uid,
+          fileInfoPrefix('created', id),
+          uploadTime
+        );
+        this.redis.hset(
+          meta.user.uid,
+          fileInfoPrefix('last_modified', id),
+          uploadTime
+        );
+
+        // overall last_modified file timestamp
+        this.redis.hset(meta.user.uid, 'last_modified', uploadTime);
+      }
     }
     this.redis.expire(id, expireSeconds);
   }
@@ -92,8 +113,14 @@ class DB {
     this.redis.hmset(id, { flagged: 1, key });
   }
 
-  async del(id) {
+  async del(id, meta) {
     const { filePath } = await this.getPrefixedInfo(id);
+    if (meta && meta.user) {
+      this.redis.hdel(meta.user.uid, fileInfoPrefix('id', id));
+      this.redis.hdel(meta.user.uid, fileInfoPrefix('created', id));
+      this.redis.hdel(meta.user.uid, fileInfoPrefix('last_modified', id));
+      // TO CONFIRM - // should the overall last_modified file timestamp be updated on delete ?
+    }
     this.redis.del(id);
     this.storage.del(filePath);
   }
@@ -108,12 +135,9 @@ class DB {
     return result && new Metadata({ id, ...result }, this);
   }
 
-  async allOwnerMetadata(ownerId) {
-    // TO DO. Query Redis for all data from a specific user
-    const result = await this.redis.hgetallAsync(ownerId);
-    return result.map(item => {
-      return result && new Metadata({ ownerId, ...item }, this);
-    });
+  async allOwnerMetadata(user) {
+    const result = await this.redis.hgetallAsync(user.uid);
+    return result;
   }
 }
 
