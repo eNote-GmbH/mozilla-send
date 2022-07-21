@@ -137,7 +137,9 @@ class DB {
 
   async allOwnerMetadata(user) {
     const result = await this.redis.hgetallAsync(user.uid);
-    return result;
+    const lastModified = await this.redis.hget(user.uid, 'last_modified');
+
+    return { files: result, lastModified };
   }
 }
 
