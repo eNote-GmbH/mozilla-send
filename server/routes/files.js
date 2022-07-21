@@ -2,7 +2,7 @@ const storage = require('../storage');
 
 module.exports = async function(req, res) {
   try {
-    const files = await storage.allOwnerMetadata(req.user.owner);
+    const files = await storage.allOwnerMetadata(req.user);
 
     res.status(200).json({
       files,
