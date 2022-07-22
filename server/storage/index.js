@@ -72,21 +72,17 @@ class DB {
     if (meta) {
       const uploadTime = Date.now();
       this.redis.hmset(id, meta);
-      if (meta.user && meta.user.uid) {
-        this.redis.hset(meta.user.uid, fileInfoPrefix('id', id), id);
+      if (meta && meta.user) {
+        this.redis.hset(meta.user, fileInfoPrefix('id', id), id);
+        this.redis.hset(meta.user, fileInfoPrefix('created', id), uploadTime);
         this.redis.hset(
-          meta.user.uid,
-          fileInfoPrefix('created', id),
-          uploadTime
-        );
-        this.redis.hset(
-          meta.user.uid,
+          meta.user,
           fileInfoPrefix('last_modified', id),
           uploadTime
         );
 
         // overall last_modified file timestamp
-        this.redis.hset(meta.user.uid, 'last_modified', uploadTime);
+        this.redis.hset(meta.user, 'last_modified', uploadTime);
       }
     }
     this.redis.expire(id, expireSeconds);
@@ -113,13 +109,12 @@ class DB {
     this.redis.hmset(id, { flagged: 1, key });
   }
 
-  async del(id, meta) {
+  async del(id, user) {
     const { filePath } = await this.getPrefixedInfo(id);
-    if (meta && meta.user) {
-      this.redis.hdel(meta.user.uid, fileInfoPrefix('id', id));
-      this.redis.hdel(meta.user.uid, fileInfoPrefix('created', id));
-      this.redis.hdel(meta.user.uid, fileInfoPrefix('last_modified', id));
-      // TO CONFIRM - // should the overall last_modified file timestamp be updated on delete ?
+    if (user) {
+      this.redis.hdel(user, fileInfoPrefix('id', id));
+      this.redis.hdel(user, fileInfoPrefix('created', id));
+      this.redis.hdel(user, fileInfoPrefix('last_modified', id));
     }
     this.redis.del(id);
     this.storage.del(filePath);
@@ -136,10 +131,10 @@ class DB {
   }
 
   async allOwnerMetadata(user) {
-    const result = await this.redis.hgetallAsync(user.uid);
-    const lastModified = await this.redis.hget(user.uid, 'last_modified');
+    const files = await this.redis.hgetallAsync(user);
+    const lastModified = await this.redis.hget(user, 'last_modified');
 
-    return { files: result, lastModified };
+    return { files, lastModified };
   }
 }
 
