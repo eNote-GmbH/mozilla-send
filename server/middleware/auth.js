@@ -1,7 +1,16 @@
 const crypto = require('crypto');
 const mozlog = require('../log');
 const storage = require('../storage');
-const fxa = require('../fxa');
+
+const config = require('../config');
+const fxa_lib =
+  config.env === 'development' && config.fxa_url === 'mock'
+    ? '../fxa-mock'
+    : '../fxa';
+
+//eslint-disable-next-line security/detect-non-literal-require
+const fxa = require(fxa_lib);
+
 const log = mozlog('send.auth');
 
 const get_valid_meta = async function(storage, req) {
