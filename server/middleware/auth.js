@@ -1,16 +1,7 @@
 const crypto = require('crypto');
 const mozlog = require('../log');
 const storage = require('../storage');
-
-const config = require('../config');
-const fxa_lib =
-  config.env === 'development' && config.fxa_url === 'mock'
-    ? '../fxa-mock'
-    : '../fxa';
-
-//eslint-disable-next-line security/detect-non-literal-require
-const fxa = require(fxa_lib);
-
+const fxa = require('../fxa');
 const log = mozlog('send.auth');
 
 const get_valid_meta = async function(storage, req) {
@@ -45,6 +36,8 @@ const test_auth_fxa = async function(meta, req, auth_type, auth_value) {
       const metaAuth = Buffer.from(meta.user, 'utf8');
       const userAuth = Buffer.from(req.user, 'utf8');
       return crypto.timingSafeEqual(metaAuth, userAuth);
+    } else {
+      return true;
     }
   }
 
