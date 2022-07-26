@@ -52,7 +52,7 @@ describe('/api/files', function() {
 
   it('returns a json object', async function() {
     storage.allOwnerMetadata.returns(
-      Promise.resolve({ files: ['some files'], lastModified: 'today' })
+      Promise.resolve({ files: ['some files'], lastModified: 1658841882548 })
     );
     const req = request('Tom');
     const res = response();
@@ -60,7 +60,7 @@ describe('/api/files', function() {
     sinon.assert.calledWithMatch(res.json, {
       files: ['some files'],
       count: 1,
-      last_modified: 'today'
+      last_modified: 1658841882548
     });
   });
 });
