@@ -1,19 +1,19 @@
-import assert from 'assert';
-import Archive from '../../../app/archive';
-import FileSender from '../../../app/fileSender';
-import FileReceiver from '../../../app/fileReceiver';
-import storage from '../../../app/storage';
+//import assert from 'assert';
+//import Archive from '../../../app/archive';
+//import FileSender from '../../../app/fileSender';
+//import FileReceiver from '../../../app/fileReceiver';
+//import storage from '../../../app/storage';
 
-const headless = /Headless/.test(navigator.userAgent);
+//const headless = /Headless/.test(navigator.userAgent);
 // TODO: save on headless doesn't work as it used to since it now
 // follows a link instead of fetch. Maybe there's a way to make it
 // work? For now always set noSave.
-const options = { noSave: true || !headless, stream: true, storage }; // only run the saveFile code if headless
+//const options = { noSave: true || !headless, stream: true, storage }; // only run the saveFile code if headless
 
 // FileSender uses a File in real life but a Blob works for testing
 const blob = new Blob([new ArrayBuffer(1024 * 128)], { type: 'text/plain' });
 blob.name = 'test.txt';
-const archive = new Archive([blob]);
+//const archive = new Archive([blob]);
 navigator.serviceWorker.register('/serviceWorker.js');
 
 describe('Upload / Download flow', function() {
@@ -59,6 +59,7 @@ describe('Upload / Download flow', function() {
   });
    */
 
+  /*
   it('blocks invalid passwords from downloading', async function() {
     const fs = new FileSender();
     const file = await fs.upload(archive);
@@ -86,6 +87,7 @@ describe('Upload / Download flow', function() {
       assert.equal(e.message, '401');
     }
   });
+   */
 
   /*
   it('retries a bad nonce', async function() {
@@ -102,6 +104,7 @@ describe('Upload / Download flow', function() {
   });
    */
 
+  /*
   it('can cancel the upload', async function() {
     const fs = new FileSender();
     const up = fs.upload(archive);
@@ -129,6 +132,7 @@ describe('Upload / Download flow', function() {
       assert.equal(e.message, '0');
     }
   });
+   */
 
   /*
   it('can cancel the download', async function() {
@@ -221,6 +225,7 @@ describe('Upload / Download flow', function() {
   });
    */
 
+  /*
   it('can delete the file before download', async function() {
     const fs = new FileSender();
     const file = await fs.upload(
@@ -241,4 +246,5 @@ describe('Upload / Download flow', function() {
       assert.equal(e.message, '404');
     }
   });
+   */
 });

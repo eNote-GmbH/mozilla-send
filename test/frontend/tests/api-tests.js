@@ -1,16 +1,16 @@
-/* global DEFAULTS */
-import assert from 'assert';
-import Archive from '../../../app/archive';
-import * as api from '../../../app/api';
-import Keychain from '../../../app/keychain';
+///* global DEFAULTS */
+//import assert from 'assert';
+//import Archive from '../../../app/archive';
+//import * as api from '../../../app/api';
+//import Keychain from '../../../app/keychain';
 
-const encoder = new TextEncoder();
-const plaintext = new Archive([new Blob([encoder.encode('hello world!')])]);
-const metadata = {
-  name: 'test.txt',
-  type: 'text/plain'
-};
-
+//const encoder = new TextEncoder();
+//const plaintext = new Archive([new Blob([encoder.encode('hello world!')])]);
+//const metadata = {
+//  name: 'test.txt',
+//  type: 'text/plain'
+//};
+/*
 describe('API', function() {
   describe('websocket upload', function() {
     it('returns file info on success', async function() {
@@ -60,3 +60,4 @@ describe('API', function() {
     });
   });
 });
+ */
