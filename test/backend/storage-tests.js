@@ -172,4 +172,53 @@ describe('Storage', function() {
       );
     });
   });
+
+  describe('allOwnerMetadata', function() {
+    it('returns all files of user', async function() {
+      const x = {
+        id: 'a1',
+        pwd: 0,
+        dl: 1,
+        dlimit: 1,
+        fxa: 1,
+        auth: 'foo',
+        metadata: 'bar',
+        nonce: 'baz',
+        owner: 'bmo',
+        user: 'bus',
+        contentType: 'image/gif'
+      };
+      await storage.set('x', null, x);
+      const y = {
+        id: 'a2',
+        pwd: 0,
+        dl: 1,
+        dlimit: 1,
+        fxa: 1,
+        auth: 'foo2',
+        metadata: 'bar2',
+        nonce: 'baz2',
+        owner: 'bmo',
+        user: 'bus',
+        contentType: 'image/gif'
+      };
+      await storage.set('y', null, y);
+      const allOwnerMetadata = await storage.allOwnerMetadata('bus');
+      assert.deepEqual(allOwnerMetadata, {
+        files: [
+          {
+            id: 'x',
+            created: allOwnerMetadata.files[0].created,
+            last_modified: allOwnerMetadata.files[0].last_modified
+          },
+          {
+            id: 'y',
+            created: allOwnerMetadata.files[1].created,
+            last_modified: allOwnerMetadata.files[1].last_modified
+          }
+        ],
+        lastModified: allOwnerMetadata.files[1].last_modified
+      });
+    });
+  });
 });
