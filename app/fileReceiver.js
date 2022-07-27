@@ -68,7 +68,6 @@ export default class FileReceiver extends Nanobus {
     this.fileInfo.size = +meta.size;
     this.fileInfo.manifest = meta.manifest;
     this.state = 'ready';
-    console.log('metadata fileinfo', this.fileInfo);
   }
 
   async reportLink(reason) {

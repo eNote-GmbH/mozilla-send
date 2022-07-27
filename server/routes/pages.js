@@ -54,7 +54,10 @@ module.exports = {
   },
 
   notfound: async function(req, res) {
+    console.log('pages notfound');
     const appState = await state(req);
+    console.log('state', appState);
+    console.trace();
     res
       .status(404)
       .send(

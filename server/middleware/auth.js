@@ -163,8 +163,11 @@ module.exports = {
     try {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
+        console.log('I think I got it!');
         const meta = await get_valid_meta(storage, req);
+        console.log('No meta, huh?', meta);
         if (!meta) {
+          console.log('No meta, really...', meta);
           return res.sendStatus(404);
         }
 

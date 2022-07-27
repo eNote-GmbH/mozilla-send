@@ -32,7 +32,9 @@ module.exports = function(ws, req) {
         fileInfo.timeLimit === 0
           ? 0
           : fileInfo.timeLimit || config.default_expire_seconds;
+      console.log('timeLimit', timeLimit);
       const dlimit = fileInfo.dlimit || config.default_downloads;
+      console.log('dlimit', dlimit);
       const metadata = fileInfo.fileMetadata;
       const auth = fileInfo.authorization;
       console.log('auth', auth);

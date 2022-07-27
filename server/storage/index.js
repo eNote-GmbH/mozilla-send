@@ -28,7 +28,9 @@ class DB {
   }
 
   async ttl(id) {
+    console.log('storage ttl, id', id);
     const result = await this.redis.ttlAsync(id);
+    console.log('result', result);
     return Math.ceil(result) * 1000;
   }
 

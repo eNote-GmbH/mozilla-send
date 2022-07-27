@@ -117,14 +117,14 @@ module.exports = function(app) {
   app.get(`/api/download/:id${ID_REGEX}`, auth.fxa, require('./download'));
   app.get(`/api/download/blob/:id${ID_REGEX}`, auth.fxa, require('./download'));
   app.get(`/api/exists/:id${ID_REGEX}`, auth.fxa, require('./exists'));
-  app.get(`/api/metadata/:id${ID_REGEX}`, auth.hmac, require('./metadata'));
+  app.get(`/api/metadata/:id${ID_REGEX}`, auth.fxa, require('./metadata'));
   app.get('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.get);
   app.post('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.post);
   app.post('/api/upload', auth.fxa, require('./upload'));
-  app.post(`/api/delete/:id${ID_REGEX}`, auth.owner, require('./delete'));
-  app.post(`/api/password/:id${ID_REGEX}`, auth.owner, require('./password'));
-  app.post(`/api/params/:id${ID_REGEX}`, auth.owner, require('./params'));
-  app.post(`/api/info/:id${ID_REGEX}`, auth.owner, require('./info'));
+  app.post(`/api/delete/:id${ID_REGEX}`, auth.fxa, require('./delete'));
+  app.post(`/api/password/:id${ID_REGEX}`, auth.fxa, require('./password'));
+  app.post(`/api/params/:id${ID_REGEX}`, auth.fxa, require('./params'));
+  app.post(`/api/info/:id${ID_REGEX}`, auth.fxa, require('./info'));
   app.get('/__version__', function(req, res) {
     // eslint-disable-next-line node/no-missing-require
     res.sendFile(require.resolve('../../dist/version.json'));
