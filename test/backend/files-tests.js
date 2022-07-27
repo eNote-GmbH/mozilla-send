@@ -52,14 +52,23 @@ describe('/api/files', function() {
 
   it('returns a json object', async function() {
     storage.allOwnerMetadata.returns(
-      Promise.resolve({ files: ['some files'], lastModified: 1658841882548 })
+      Promise.resolve({
+        files: [
+          { id: 'x', created: 1658841882548, last_modified: 1658841882548 },
+          { id: 'y', created: 1658841882548, last_modified: 1658841882548 }
+        ],
+        lastModified: 1658841882548
+      })
     );
     const req = request('Tom');
     const res = response();
     await filesRoute(req, res);
     sinon.assert.calledWithMatch(res.json, {
-      files: ['some files'],
-      count: 1,
+      files: [
+        { id: 'x', created: 1658841882548, last_modified: 1658841882548 },
+        { id: 'y', created: 1658841882548, last_modified: 1658841882548 }
+      ],
+      count: 2,
       last_modified: 1658841882548
     });
   });

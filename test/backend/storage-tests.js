@@ -184,16 +184,19 @@ describe('Storage', function() {
       await storage.set('y', null, y);
       const allOwnerMetadata = await storage.allOwnerMetadata('bus');
       assert.deepEqual(allOwnerMetadata, {
-        files: {
-          'created:x': allOwnerMetadata.files['created:x'],
-          'created:y': allOwnerMetadata.files['created:y'],
-          'id:x': 'x',
-          'id:y': 'y',
-          last_modified: allOwnerMetadata.files.last_modified,
-          'last_modified:x': allOwnerMetadata.files['last_modified:x'],
-          'last_modified:y': allOwnerMetadata.files['last_modified:y']
-        },
-        lastModified: undefined
+        files: [
+          {
+            id: 'x',
+            created: allOwnerMetadata.files[0].created,
+            last_modified: allOwnerMetadata.files[0].last_modified
+          },
+          {
+            id: 'y',
+            created: allOwnerMetadata.files[1].created,
+            last_modified: allOwnerMetadata.files[1].last_modified
+          }
+        ],
+        lastModified: allOwnerMetadata.files[1].last_modified
       });
     });
   });

@@ -131,9 +131,21 @@ class DB {
   }
 
   async allOwnerMetadata(user) {
-    const files = await this.redis.hgetallAsync(user);
-    const lastModified = await this.redis.hget(user, 'last_modified');
-
+    const filesRaw = await this.redis.hgetallAsync(user);
+    const lastModified = filesRaw.last_modified;
+    delete filesRaw.last_modified;
+    const filesMap = new Map();
+    for (const property in filesRaw) {
+      const key = property.split(':')[0];
+      const id = property.substring(key.length + 1);
+      const value = filesRaw[property];
+      if (filesMap.has(id)) {
+        filesMap.get(id)[key] = value;
+      } else {
+        filesMap.set(id, { [key]: value });
+      }
+    }
+    const files = Array.from(filesMap.values());
     return { files, lastModified };
   }
 }
