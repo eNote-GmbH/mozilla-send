@@ -1,6 +1,7 @@
 const storage = require('../storage');
 
 module.exports = async function(req, res) {
+  console.log('info');
   try {
     const ttl = await storage.ttl(req.params.id);
     return res.send({
@@ -9,6 +10,7 @@ module.exports = async function(req, res) {
       ttl
     });
   } catch (e) {
+    console.log('info 404');
     res.sendStatus(404);
   }
 };

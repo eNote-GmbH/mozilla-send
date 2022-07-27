@@ -1,13 +1,16 @@
 const storage = require('../storage');
 
 module.exports = async (req, res) => {
+  console.log('exists');
   try {
     const meta = await storage.metadata(req.params.id);
     res.set('WWW-Authenticate', `send-v1 ${meta.nonce}`);
     res.send({
       requiresPassword: meta.pwd
     });
+    console.log('exists complete');
   } catch (e) {
+    console.log('exists 404');
     res.sendStatus(404);
   }
 };

@@ -10,16 +10,19 @@ function stripEvents(str) {
 
 module.exports = {
   index: async function(req, res) {
+    console.log('pages index');
     const appState = await state(req);
     res.send(stripEvents(routes().toString('/blank', appState)));
   },
 
   blank: async function(req, res) {
+    console.log('pages blank');
     const appState = await state(req);
     res.send(stripEvents(routes().toString('/blank', appState)));
   },
 
   download: async function(req, res, next) {
+    console.log('pages download');
     const id = req.params.id;
     const appState = await state(req);
     try {
@@ -41,6 +44,7 @@ module.exports = {
   },
 
   unsupported: async function(req, res) {
+    console.log('pages unsupported');
     const appState = await state(req);
     res.send(
       stripEvents(

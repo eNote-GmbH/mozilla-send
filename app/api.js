@@ -57,12 +57,11 @@ export function parseNonce(header) {
   return header.split(' ')[1];
 }
 
-async function fetchWithAuth(url, params, keychain) {
+async function fetchWithAuth(url, params, keychain, bearerToken) {
   const result = {};
   params = params || {};
-  const h = await keychain.authHeader();
   params.headers = new Headers({
-    Authorization: h,
+    Authorization: 'Bearer ' + bearerToken,
     'Content-Type': 'application/json'
   });
   const response = await fetch(url, params);
@@ -74,10 +73,10 @@ async function fetchWithAuth(url, params, keychain) {
   return result;
 }
 
-async function fetchWithAuthAndRetry(url, params, keychain) {
-  const result = await fetchWithAuth(url, params, keychain);
+async function fetchWithAuthAndRetry(url, params, keychain, bearerToken) {
+  const result = await fetchWithAuth(url, params, keychain, bearerToken);
   if (result.shouldRetry) {
-    return fetchWithAuth(url, params, keychain);
+    return fetchWithAuth(url, params, keychain, bearerToken);
   }
   return result;
 }
@@ -118,11 +117,12 @@ export async function fileInfo(id, owner_token) {
   throw new Error(response.status);
 }
 
-export async function metadata(id, keychain) {
+export async function metadata(id, keychain, bearerToken) {
   const result = await fetchWithAuthAndRetry(
     getApiUrl(`/api/metadata/${id}`),
     { method: 'GET' },
-    keychain
+    keychain,
+    bearerToken
   );
   if (result.ok) {
     const data = await result.response.json();
@@ -139,11 +139,11 @@ export async function metadata(id, keychain) {
   throw new Error(result.response.status);
 }
 
-export async function setPassword(id, owner_token, keychain) {
+export async function setPassword(id, owner_token, keychain, bearerToken) {
   const auth = await keychain.authKeyB64();
   const response = await fetch(
     getApiUrl(`/api/password/${id}`),
-    post({ owner_token, auth })
+    post({ owner_token, auth }, bearerToken)
   );
   return response.ok;
 }
@@ -231,6 +231,7 @@ async function upload(
         break;
       }
       const buf = state.value;
+      console.log('buf', buf);
       ws.send(buf);
       onprogress(size);
       size += buf.length;

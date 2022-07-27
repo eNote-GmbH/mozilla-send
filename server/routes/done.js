@@ -1,6 +1,7 @@
 const storage = require('../storage');
 
 module.exports = async function(req, res) {
+  console.log('done');
   try {
     const id = req.params.id;
     const meta = req.meta;
@@ -13,9 +14,11 @@ module.exports = async function(req, res) {
       // clients are well behaved. If this becomes
       // a problem we can keep track of used tokens.
       await storage.kill(id);
+      console.log('done complete');
     }
     res.sendStatus(200);
   } catch (e) {
+    console.log('done 404');
     res.sendStatus(404);
   }
 };

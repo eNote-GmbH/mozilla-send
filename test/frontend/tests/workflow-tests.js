@@ -1,6 +1,6 @@
-//import assert from 'assert';
-//import Archive from '../../../app/archive';
-//import FileSender from '../../../app/fileSender';
+import assert from 'assert';
+import Archive from '../../../app/archive';
+import FileSender from '../../../app/fileSender';
 //import FileReceiver from '../../../app/fileReceiver';
 //import storage from '../../../app/storage';
 
@@ -10,10 +10,12 @@
 // work? For now always set noSave.
 //const options = { noSave: true || !headless, stream: true, storage }; // only run the saveFile code if headless
 
+const correct_token = 'correct_token.correct_token.correct_token';
+
 // FileSender uses a File in real life but a Blob works for testing
 const blob = new Blob([new ArrayBuffer(1024 * 128)], { type: 'text/plain' });
 blob.name = 'test.txt';
-//const archive = new Archive([blob]);
+const archive = new Archive([blob]);
 navigator.serviceWorker.register('/serviceWorker.js');
 
 describe('Upload / Download flow', function() {
@@ -21,13 +23,15 @@ describe('Upload / Download flow', function() {
   /*
   it('can only download once by default', async function() {
     const fs = new FileSender();
-    const file = await fs.upload(archive);
+    const file = await fs.upload(archive, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: file.keychain.nonce,
       requiresPassword: false
-    });
+    },
+      correct_token
+    );
     await fr.getMetadata();
     await fr.download(options);
 
@@ -43,8 +47,8 @@ describe('Upload / Download flow', function() {
   /*
   it('downloads with the correct password', async function() {
     const fs = new FileSender();
-    const file = await fs.upload(archive);
-    await file.setPassword('magic');
+    const file = await fs.upload(archive, correct_token);
+    await file.setPassword('magic', correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
@@ -52,17 +56,16 @@ describe('Upload / Download flow', function() {
       nonce: file.keychain.nonce,
       requiresPassword: true,
       password: 'magic'
-    });
+    },
+      correct_token);
     await fr.getMetadata();
     await fr.download(options);
     assert.equal(fr.state, 'complete');
   });
-   */
 
-  /*
   it('blocks invalid passwords from downloading', async function() {
     const fs = new FileSender();
-    const file = await fs.upload(archive);
+    const file = await fs.upload(archive, correct_token);
     await file.setPassword('magic');
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
@@ -71,7 +74,8 @@ describe('Upload / Download flow', function() {
       nonce: file.keychain.nonce,
       requiresPassword: true,
       password: 'password'
-    });
+    },
+      correct_token);
     try {
       await fr.getMetadata();
       assert.fail('got metadata with bad password');
@@ -87,27 +91,25 @@ describe('Upload / Download flow', function() {
       assert.equal(e.message, '401');
     }
   });
-   */
 
-  /*
   it('retries a bad nonce', async function() {
     const fs = new FileSender();
-    const file = await fs.upload(archive);
+    const file = await fs.upload(archive, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: null, // oops
       requiresPassword: false
-    });
+    },
+      correct_token);
     await fr.getMetadata();
     assert.equal(fr.fileInfo.name, archive.name);
   });
-   */
+  */
 
-  /*
   it('can cancel the upload', async function() {
     const fs = new FileSender();
-    const up = fs.upload(archive);
+    const up = fs.upload(archive, correct_token);
     fs.cancel(); // before encrypting
     try {
       await up;
@@ -118,7 +120,7 @@ describe('Upload / Download flow', function() {
     fs.reset();
     fs.once('encrypting', () => fs.cancel());
     try {
-      await fs.upload(archive);
+      await fs.upload(archive, correct_token);
       assert.fail('not cancelled 2');
     } catch (e) {
       assert.equal(e.message, '0');
@@ -126,24 +128,24 @@ describe('Upload / Download flow', function() {
     fs.reset();
     fs.once('progress', () => fs.cancel());
     try {
-      await fs.upload(archive);
+      await fs.upload(archive, correct_token);
       assert.fail('not cancelled 3');
     } catch (e) {
       assert.equal(e.message, '0');
     }
   });
-   */
 
   /*
   it('can cancel the download', async function() {
     const fs = new FileSender();
-    const file = await fs.upload(archive);
+    const file = await fs.upload(archive, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: file.keychain.nonce,
       requiresPassword: false
-    });
+    },
+      correct_token);
     await fr.getMetadata();
     fr.once('progress', () => fr.cancel());
     try {
@@ -153,36 +155,34 @@ describe('Upload / Download flow', function() {
       assert.equal(e.message, '0');
     }
   });
-   */
 
-  /*
   it('can increase download count on download', async function() {
     this.timeout(0);
     const fs = new FileSender();
-    const file = await fs.upload(archive);
+    const file = await fs.upload(archive, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: file.keychain.nonce,
       requiresPassword: false
-    });
+    },
+      correct_token);
     await fr.getMetadata();
     await fr.download(options);
     await file.updateDownloadCount();
     assert.equal(file.dtotal, 1);
   });
-   */
 
-  /*
   it('does not increase download count when download cancelled', async function() {
     const fs = new FileSender();
-    const file = await fs.upload(archive);
+    const file = await fs.upload(archive, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: file.keychain.nonce,
       requiresPassword: false
-    });
+    },
+      correct_token);
     await fr.getMetadata();
     fr.once('progress', () => fr.cancel());
 
@@ -194,20 +194,19 @@ describe('Upload / Download flow', function() {
       assert.equal(file.dtotal, 0);
     }
   });
-   */
 
-  /*
   it('can allow multiple downloads', async function() {
     const fs = new FileSender();
     const a = new Archive([blob]);
     a.dlimit = 2;
-    const file = await fs.upload(a);
+    const file = await fs.upload(a, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: file.keychain.nonce,
       requiresPassword: false
-    });
+    },
+      correct_token);
     await fr.getMetadata();
     await fr.download(options);
     await file.updateDownloadCount();
@@ -223,21 +222,18 @@ describe('Upload / Download flow', function() {
       assert.equal(e.message, '404');
     }
   });
-   */
 
-  /*
   it('can delete the file before download', async function() {
     const fs = new FileSender();
     const file = await fs.upload(
-      archive,
-      'correct_token.correct_token.correct_tokens'
-    );
+      archive, correct_token);
     const fr = new FileReceiver({
       secretKey: file.toJSON().secretKey,
       id: file.id,
       nonce: file.keychain.nonce,
       requiresPassword: false
-    });
+    },
+      correct_token);
     await file.del();
     try {
       await fr.getMetadata();

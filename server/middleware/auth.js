@@ -159,6 +159,7 @@ module.exports = {
     }
   },
   fxa: async function(req, res, next) {
+    console.log('auth fxa');
     try {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
@@ -173,6 +174,8 @@ module.exports = {
       log.warn('fxa', e);
       req.authorized = false;
     }
+
+    console.log('auth fxa authorized', req.authorized);
 
     if (req.authorized) {
       next();

@@ -1,6 +1,7 @@
 const state = require('../state');
 
 module.exports = async function(req, res) {
+  console.log('webmanifest');
   const appState = await state(req);
 
   const manifest = {

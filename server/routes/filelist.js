@@ -15,6 +15,7 @@ function id(user, kid) {
 
 module.exports = {
   async get(req, res) {
+    console.log('filelist get');
     const kid = req.params.kid;
     try {
       const fileId = id(req.user, kid);
@@ -31,6 +32,7 @@ module.exports = {
   },
 
   async post(req, res) {
+    console.log('filelist post');
     const kid = req.params.kid;
     try {
       const limiter = new Limiter(1024 * 1024 * 10);

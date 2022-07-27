@@ -8,11 +8,13 @@ const { encryptedSize } = require('../../app/utils');
 const log = mozlog('send.upload');
 
 module.exports = async function(req, res) {
+  console.log('upload');
   const newId = crypto.randomBytes(8).toString('hex');
   const metadata = req.header('X-File-Metadata');
   const auth = req.header('Authorization');
   const contentType = req.header('Content-Type');
   if (!metadata || !auth) {
+    console.log('upload 400');
     return res.sendStatus(400);
   }
   const owner = crypto.randomBytes(10).toString('hex');
@@ -40,9 +42,10 @@ module.exports = async function(req, res) {
     });
   } catch (e) {
     if (e.message === 'limit') {
+      console.log('upload 413');
       return res.sendStatus(413);
     }
-    log.error('upload', e);
+    log.error('upload 500', e);
     res.sendStatus(500);
   }
 };

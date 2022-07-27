@@ -11,15 +11,18 @@ const { Transform } = require('stream');
 const log = mozlog('send.upload');
 
 module.exports = function(ws, req) {
+  console.log('ws');
   let fileStream;
 
   ws.on('close', e => {
+    console.log('ws close');
     if (e !== 1000 && fileStream !== undefined) {
       fileStream.destroy();
     }
   });
 
   ws.once('message', async function(message) {
+    console.log('ws message', message);
     try {
       const newId = crypto.randomBytes(8).toString('hex');
       const owner = crypto.randomBytes(10).toString('hex');
@@ -32,7 +35,10 @@ module.exports = function(ws, req) {
       const dlimit = fileInfo.dlimit || config.default_downloads;
       const metadata = fileInfo.fileMetadata;
       const auth = fileInfo.authorization;
+      console.log('auth', auth);
+      console.log('fileInfo.bearer', fileInfo.bearer);
       const user = await fxa.verify(fileInfo.bearer);
+      console.log('user', user);
       const maxFileSize = config.max_file_size;
       const maxExpireSeconds = config.max_expire_seconds;
       const maxDownloads = config.max_downloads;
