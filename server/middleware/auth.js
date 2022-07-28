@@ -164,6 +164,8 @@ module.exports = {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
         const meta = await get_valid_meta(storage, req);
+
+        // check for both meta and req.user(for new users or no file id param in req)
         if (!meta && !req.user) {
           return res.sendStatus(404);
         }
