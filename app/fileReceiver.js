@@ -229,7 +229,11 @@ export default class FileReceiver extends Nanobus {
   async download({ stream, storage, noSave }) {
     this.dlToken = storage.getDownloadToken(this.id);
     if (!this.dlToken) {
-      this.dlToken = await getDownloadToken(this.id, this.keychain);
+      this.dlToken = await getDownloadToken(
+        this.id,
+        this.keychain,
+        this.bearerToken
+      );
       storage.setDownloadToken(this.id, this.dlToken);
     }
     if (stream) {

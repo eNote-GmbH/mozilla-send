@@ -423,13 +423,14 @@ export async function getConstants() {
   throw new Error(response.status);
 }
 
-export async function getDownloadToken(id, keychain) {
+export async function getDownloadToken(id, keychain, bearerToken) {
   const result = await fetchWithAuthAndRetry(
     getApiUrl(`/api/download/token/${id}`),
     {
       method: 'GET'
     },
-    keychain
+    keychain,
+    bearerToken
   );
 
   if (result.ok) {
