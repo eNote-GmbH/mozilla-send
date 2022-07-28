@@ -34,6 +34,13 @@ describe('Upload / Download flow', function() {
     );
     await fr.getMetadata();
     await fr.download(options);
+
+    try {
+      await fr.download(options);
+      assert.fail('downloaded again');
+    } catch (e) {
+      assert.equal(e.message, '404');
+    }
   });
 
   it('downloads with the correct password', async function() {
