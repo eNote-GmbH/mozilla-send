@@ -13,7 +13,7 @@ import { blobStream } from './streams';
 import Zip from './zip';
 
 export default class FileReceiver extends Nanobus {
-  constructor(fileInfo) {
+  constructor(fileInfo, bearerToken) {
     super('FileReceiver');
     this.keychain = new Keychain(fileInfo.secretKey, fileInfo.nonce);
     if (fileInfo.requiresPassword) {
@@ -21,6 +21,7 @@ export default class FileReceiver extends Nanobus {
     }
     this.fileInfo = fileInfo;
     this.dlToken = null;
+    this.bearerToken = bearerToken;
     this.reset();
   }
 
@@ -56,7 +57,11 @@ export default class FileReceiver extends Nanobus {
   }
 
   async getMetadata() {
-    const meta = await metadata(this.fileInfo.id, this.keychain);
+    const meta = await metadata(
+      this.fileInfo.id,
+      this.keychain,
+      this.bearerToken
+    );
     this.fileInfo.name = meta.name;
     this.fileInfo.type = meta.type;
     this.fileInfo.iv = meta.iv;
@@ -224,7 +229,11 @@ export default class FileReceiver extends Nanobus {
   async download({ stream, storage, noSave }) {
     this.dlToken = storage.getDownloadToken(this.id);
     if (!this.dlToken) {
-      this.dlToken = await getDownloadToken(this.id, this.keychain);
+      this.dlToken = await getDownloadToken(
+        this.id,
+        this.keychain,
+        this.bearerToken
+      );
       storage.setDownloadToken(this.id, this.dlToken);
     }
     if (stream) {

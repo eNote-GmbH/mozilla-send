@@ -32,12 +32,17 @@ export default class OwnedFile {
     return this.dlimit === this.dtotal || Date.now() > this.expiresAt;
   }
 
-  async setPassword(password) {
+  async setPassword(password, bearerToken) {
     try {
       this.password = password;
       this._hasPassword = true;
       this.keychain.setPassword(password, this.url);
-      const result = await setPassword(this.id, this.ownerToken, this.keychain);
+      const result = await setPassword(
+        this.id,
+        this.ownerToken,
+        this.keychain,
+        bearerToken
+      );
       return result;
     } catch (e) {
       this.password = null;

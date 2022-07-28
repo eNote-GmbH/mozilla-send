@@ -5,26 +5,20 @@
 [![Docker image][docker-image-badge]][docker-image-link]
 [![Project license][repo-license-badge]](LICENSE)
 
-[docker-image-badge]: https://img.shields.io/badge/docker-latest-blue.svg
-[docker-image-link]: https://gitlab.com/timvisee/send/container_registry/eyJuYW1lIjoidGltdmlzZWUvc2VuZCIsInRhZ3NfcGF0aCI6Ii90aW12aXNlZS9zZW5kL3JlZ2lzdHJ5L3JlcG9zaXRvcnkvMTQxODUwNC90YWdzP2Zvcm1hdD1qc29uIiwiaWQiOjE0MTg1MDQsImNsZWFudXBfcG9saWN5X3N0YXJ0ZWRfYXQiOm51bGx9
-[gitlab-ci-link]: https://gitlab.com/timvisee/send/pipelines
-[gitlab-ci-master-badge]: https://gitlab.com/timvisee/send/badges/master/pipeline.svg
-[release-badge]: https://img.shields.io/github/v/tag/timvisee/send
-[release-link]: https://gitlab.com/timvisee/send/-/tags
-[repo-license-badge]: https://img.shields.io/github/license/timvisee/send.svg
+A fork of Mozilla's [Firefox Send][mozilla-send] fork by [send.vis.ee](https://github.com/timvisee/send).
+Mozilla discontinued Send, this fork is intended to be used as an internal service for user uploads.
 
-A fork of Mozilla's [Firefox Send][mozilla-send].
-Mozilla discontinued Send, this fork is a community effort to keep the project
-up-to-date and alive.
+Major changes to the original work:
+
+* FxA authorization is active by default, to deactivate it, please set env variable `FXA_REQUIRED` to `false` (please
+notice the behavior in that case wasn't properly tested as we are not going to provide the access to anybody except
+our users)
+* the `/api/download/token`, `/api/metadata/` endpoints are protected with FxA authorization
+* the `DEFAULT_EXPIRE_SECONDS` env variable is set to `0` by default (so the service would keep the uploaded files
+forever by default)
 
 - Forked [at][fork-commit] Mozilla's last publicly hosted version
-- _Mozilla_ & _Firefox_ branding [is][remove-branding-pr] removed so you can legally self-host
-- Kept compatible with [`ffsend`][ffsend] (CLI for Send)
-- Dependencies have been updated
-- Mozilla's [changes][mozilla-patches] since the fork have been selectively [merged][mozilla-patches-pr]
-- Mozilla's experimental report feature, download tokens, trust warnings and FxA changes are not included
-
-Find an up-to-date Docker image here: [docs/docker.md](docs/docker.md)
+- _Mozilla_ & _Firefox_ branding [is][remove-branding-pr] removed so we can legally self-host
 
 The original project by Mozilla can be found [here][mozilla-send].
 The [`mozilla-master`][branch-mozilla-master] branch holds the `master` branch
