@@ -63,6 +63,33 @@ describe('Upload / Download flow', function() {
     assert.equal(fr.state, 'complete');
   });
 
+  it('downloads with the incorrect bearer token', async function() {
+    const fs = new FileSender();
+    const file = await fs.upload(archive, correctToken);
+    const fr = new FileReceiver(
+      {
+        secretKey: file.toJSON().secretKey,
+        id: file.id,
+        url: file.url,
+        nonce: file.keychain.nonce,
+        requiresPassword: false
+      },
+      'incorrect_token'
+    );
+    try {
+      await fr.getMetadata();
+      assert.fail('got metadata');
+    } catch (e) {
+      assert.equal(e.message, '401');
+    }
+    try {
+      await fr.download(options);
+      assert.fail('got file');
+    } catch (e) {
+      assert.equal(e.message, '401');
+    }
+  });
+
   it('retries a bad nonce', async function() {
     const fs = new FileSender();
     const file = await fs.upload(archive, correctToken);
