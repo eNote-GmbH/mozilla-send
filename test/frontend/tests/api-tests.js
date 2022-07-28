@@ -4,6 +4,8 @@ import Archive from '../../../app/archive';
 import * as api from '../../../app/api';
 import Keychain from '../../../app/keychain';
 
+const correctToken = 'correct_token.correct_token.correct_token';
+
 const encoder = new TextEncoder();
 const plaintext = new Archive([new Blob([encoder.encode('hello world!')])]);
 const metadata = {
@@ -25,7 +27,7 @@ describe('API', function() {
         verifierB64,
         DEFAULTS.EXPIRE_SECONDS,
         1,
-        null,
+        correctToken,
         p
       );
 
@@ -47,6 +49,7 @@ describe('API', function() {
         verifierB64,
         DEFAULTS.EXPIRE_SECONDS,
         null,
+        correctToken,
         p
       );
 
