@@ -135,6 +135,7 @@ module.exports = function(app) {
   app.post(`/api/password/:id${ID_REGEX}`, auth.owner, require('./password'));
   app.post(`/api/params/:id${ID_REGEX}`, auth.owner, require('./params'));
   app.post(`/api/info/:id${ID_REGEX}`, auth.owner, require('./info'));
+  app.get('/api/files', auth.fxa, require('./files'));
   app.get('/__version__', function(req, res) {
     // eslint-disable-next-line node/no-missing-require
     res.sendFile(require.resolve('../../dist/version.json'));

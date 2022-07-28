@@ -7,6 +7,10 @@ function getPrefix(seconds) {
   return seconds === 0 ? -1 : Math.max(Math.floor(seconds / 86400), 1);
 }
 
+function fileInfoPrefix(field, id) {
+  return `${field}:${id}`;
+}
+
 class DB {
   constructor(config) {
     let Storage = null;
@@ -66,7 +70,20 @@ class DB {
     await this.storage.set(filePath, file);
     this.redis.hset(id, 'prefix', prefix);
     if (meta) {
+      const uploadTime = Date.now();
       this.redis.hmset(id, meta);
+      if (meta && meta.user) {
+        this.redis.hset(meta.user, fileInfoPrefix('id', id), id);
+        this.redis.hset(meta.user, fileInfoPrefix('created', id), uploadTime);
+        this.redis.hset(
+          meta.user,
+          fileInfoPrefix('last_modified', id),
+          uploadTime
+        );
+
+        // overall last_modified file timestamp
+        this.redis.hset(meta.user, 'last_modified', uploadTime);
+      }
     }
     this.redis.expire(id, expireSeconds);
   }
@@ -92,8 +109,13 @@ class DB {
     this.redis.hmset(id, { flagged: 1, key });
   }
 
-  async del(id) {
+  async del(id, user) {
     const { filePath } = await this.getPrefixedInfo(id);
+    if (user) {
+      this.redis.hdel(user, fileInfoPrefix('id', id));
+      this.redis.hdel(user, fileInfoPrefix('created', id));
+      this.redis.hdel(user, fileInfoPrefix('last_modified', id));
+    }
     this.redis.del(id);
     this.storage.del(filePath);
   }
@@ -106,6 +128,25 @@ class DB {
   async metadata(id) {
     const result = await this.redis.hgetallAsync(id);
     return result && new Metadata({ id, ...result }, this);
+  }
+
+  async allOwnerMetadata(user) {
+    const filesRaw = await this.redis.hgetallAsync(user);
+    const lastModified = filesRaw.last_modified;
+    delete filesRaw.last_modified;
+    const filesMap = new Map();
+    for (const property in filesRaw) {
+      const key = property.split(':')[0];
+      const id = property.substring(key.length + 1);
+      const value = filesRaw[property];
+      if (filesMap.has(id)) {
+        filesMap.get(id)[key] = value;
+      } else {
+        filesMap.set(id, { [key]: value });
+      }
+    }
+    const files = Array.from(filesMap.values());
+    return { files, lastModified };
   }
 }
 
