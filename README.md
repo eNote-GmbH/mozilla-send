@@ -11,11 +11,14 @@ Mozilla discontinued Send, this fork is intended to be used as an internal servi
 Major changes to the original work:
 
 * FxA authorization is active by default, to deactivate it, please set env variable `FXA_REQUIRED` to `false` (please
-notice it wasn't properly tested)
+notice the behavior in that case wasn't properly tested as we are not going to provide the access to anybody except
+our users)
 * the `/api/download/token`, `/api/metadata/` endpoints are protected with FxA authorization
+* the `DEFAULT_EXPIRE_SECONDS` env variable is set to `0` by default (so the service would keep the uploaded files
+forever by default)
 
 - Forked [at][fork-commit] Mozilla's last publicly hosted version
-- _Mozilla_ & _Firefox_ branding [is][remove-branding-pr] removed so you can legally self-host
+- _Mozilla_ & _Firefox_ branding [is][remove-branding-pr] removed so we can legally self-host
 
 The original project by Mozilla can be found [here][mozilla-send].
 The [`mozilla-master`][branch-mozilla-master] branch holds the `master` branch
