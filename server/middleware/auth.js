@@ -179,8 +179,6 @@ module.exports = {
     } else {
       res.sendStatus(401);
     }
-
-    next();
   },
   dlToken: async function(req, res, next) {
     try {
