@@ -8,10 +8,6 @@ let lastConfigRefresh = 0;
 const fxa_mock = require('./fxa-mock');
 const use_fxa_mock = config.env === 'development' && config.fxa_url === 'mock';
 
-if (use_fxa_mock) {
-  console.log('Use fxa mock', use_fxa_mock);
-}
-
 async function getFxaConfig() {
   if (fxaConfig && Date.now() - lastConfigRefresh < 1000 * 60 * 5) {
     return fxaConfig;

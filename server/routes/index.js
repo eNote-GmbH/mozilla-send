@@ -110,7 +110,7 @@ module.exports = function(app) {
   });
   app.get('/error', language, pages.blank);
   app.get('/oauth', language, pages.blank);
-  app.get('/login', language, pages.index);
+  app.get('/login', language, pages.blank);
   app.get('/app.webmanifest', language, require('./webmanifest'));
   app.get(`/download/:id${ID_REGEX}`, language, pages.download);
   app.get('/unsupported/:reason', language, pages.unsupported);
@@ -131,7 +131,7 @@ module.exports = function(app) {
   app.get('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.get);
   app.post('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.post);
   app.post('/api/upload', auth.fxa, require('./upload'));
-  app.post(`/api/delete/:id${ID_REGEX}`, auth.fxa, require('./delete'));
+  app.post(`/api/delete/:id${ID_REGEX}`, auth.owner, require('./delete'));
   app.post(`/api/password/:id${ID_REGEX}`, auth.owner, require('./password'));
   app.post(`/api/params/:id${ID_REGEX}`, auth.owner, require('./params'));
   app.post(`/api/info/:id${ID_REGEX}`, auth.owner, require('./info'));
