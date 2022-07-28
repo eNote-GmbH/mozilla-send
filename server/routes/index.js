@@ -127,7 +127,7 @@ module.exports = function(app) {
     require('./done.js')
   );
   app.get(`/api/exists/:id${ID_REGEX}`, require('./exists'));
-  app.get(`/api/metadata/:id${ID_REGEX}`, auth.hmac, require('./metadata'));
+  app.get(`/api/metadata/:id${ID_REGEX}`, auth.fxa, require('./metadata'));
   app.get('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.get);
   app.post('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.post);
   app.post('/api/upload', auth.fxa, require('./upload'));

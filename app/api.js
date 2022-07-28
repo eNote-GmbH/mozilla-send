@@ -59,7 +59,8 @@ export function parseNonce(header) {
 
 async function fetchWithAuth(url, params, keychain, bearerToken) {
   const result = {};
-  const auth = bearerToken
+  // eslint-disable-next-line
+  const auth = !!bearerToken
     ? 'Bearer ' + bearerToken
     : await keychain.authHeader();
   params = params || {};
