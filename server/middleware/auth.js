@@ -37,6 +37,7 @@ const test_auth_fxa = async function(meta, req, auth_type, auth_value) {
       const userAuth = Buffer.from(req.user, 'utf8');
       return crypto.timingSafeEqual(metaAuth, userAuth);
     } else {
+      // no meta but we have a valid user
       return true;
     }
   }
