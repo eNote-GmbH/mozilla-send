@@ -60,7 +60,7 @@ const conf = convict({
   },
   default_expire_seconds: {
     format: Number,
-    default: 86400,
+    default: 0,
     env: 'DEFAULT_EXPIRE_SECONDS'
   },
   max_expire_seconds: {
