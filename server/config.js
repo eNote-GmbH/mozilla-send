@@ -196,7 +196,7 @@ const conf = convict({
   },
   fxa_required: {
     format: Boolean,
-    default: false,
+    default: true,
     env: 'FXA_REQUIRED'
   },
   jwe_required: {

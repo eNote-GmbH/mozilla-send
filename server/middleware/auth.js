@@ -36,6 +36,8 @@ const test_auth_fxa = async function(meta, req, auth_type, auth_value) {
       const metaAuth = Buffer.from(meta.user, 'utf8');
       const userAuth = Buffer.from(req.user, 'utf8');
       return crypto.timingSafeEqual(metaAuth, userAuth);
+    } else {
+      return true;
     }
   }
 
