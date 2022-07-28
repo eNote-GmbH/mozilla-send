@@ -56,37 +56,6 @@ describe('Upload / Download flow', function() {
     assert.equal(fr.state, 'complete');
   });
 
-  // ToDo: Fix access with wrong password
-  /*
-  it('blocks invalid passwords from downloading', async function() {
-    const fs = new FileSender();
-    const file = await fs.upload(archive, correctToken);
-    await file.setPassword('magic');
-    const fr = new FileReceiver({
-      secretKey: file.toJSON().secretKey,
-      id: file.id,
-      url: file.url,
-      nonce: file.keychain.nonce,
-      requiresPassword: true,
-      password: 'password'
-    }, correctToken);
-    try {
-      await fr.getMetadata();
-      assert.fail('got metadata with bad password');
-    } catch (e) {
-      assert.equal(e.message, '401');
-    }
-    try {
-      // We can't decrypt without IV from metadata
-      // but let's try to download anyway
-      await fr.download(options);
-      assert.fail('downloaded file with bad password');
-    } catch (e) {
-      assert.equal(e.message, '401');
-    }
-  });
-   */
-
   it('retries a bad nonce', async function() {
     const fs = new FileSender();
     const file = await fs.upload(archive, correctToken);
