@@ -164,10 +164,6 @@ module.exports = {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
         const meta = await get_valid_meta(storage, req);
-        if (!meta) {
-          return res.sendStatus(404);
-        }
-
         req.authorized = await test_auth_fxa(meta, req, auth_type, token);
       }
     } catch (e) {
