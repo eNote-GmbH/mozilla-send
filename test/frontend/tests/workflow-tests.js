@@ -20,7 +20,7 @@ navigator.serviceWorker.register('/serviceWorker.js');
 
 describe('Upload / Download flow', function() {
   this.timeout(0);
-  it('can download', async function() {
+  it('can only download once by default', async function() {
     const fs = new FileSender();
     const file = await fs.upload(archive, correctToken);
     const fr = new FileReceiver(
