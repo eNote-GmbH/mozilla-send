@@ -32,10 +32,7 @@ module.exports = function(ws, req) {
       const dlimit = fileInfo.dlimit || config.default_downloads;
       const metadata = fileInfo.fileMetadata;
       const auth = fileInfo.authorization;
-      console.log('auth', auth);
-      console.log('fileInfo.bearer', fileInfo.bearer);
       const user = await fxa.verify(fileInfo.bearer);
-      console.log('user', user);
       const maxFileSize = config.max_file_size;
       const maxExpireSeconds = config.max_expire_seconds;
       const maxDownloads = config.max_downloads;
