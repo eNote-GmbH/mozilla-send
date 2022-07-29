@@ -110,7 +110,7 @@ module.exports = function(app) {
   });
   app.get('/error', language, pages.blank);
   app.get('/oauth', language, pages.blank);
-  app.get('/login', language, pages.index);
+  app.get('/login', language, pages.blank);
   app.get('/app.webmanifest', language, require('./webmanifest'));
   app.get(`/download/:id${ID_REGEX}`, language, pages.download);
   app.get('/unsupported/:reason', language, pages.unsupported);
