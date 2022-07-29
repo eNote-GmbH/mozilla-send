@@ -50,7 +50,6 @@ module.exports = {
   },
 
   notfound: async function(req, res) {
-    console.log('pages notfound');
     const appState = await state(req);
     res
       .status(404)
