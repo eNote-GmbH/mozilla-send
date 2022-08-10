@@ -9,6 +9,7 @@ const language = require('../middleware/language');
 const pages = require('./pages');
 const filelist = require('./filelist');
 const clientConstants = require('../clientConstants');
+const sendSeekable = require('send-seekable');
 
 const IS_DEV = config.env === 'development';
 const ID_REGEX = '([0-9a-fA-F]{10,16})';
@@ -115,7 +116,12 @@ module.exports = function(app) {
   app.get(`/download/:id${ID_REGEX}`, language, pages.download);
   app.get('/unsupported/:reason', language, pages.unsupported);
   app.get(`/api/download/token/:id${ID_REGEX}`, auth.fxa, require('./token'));
-  app.get(`/api/download/:id${ID_REGEX}`, auth.dlToken, require('./download'));
+  app.get(
+    `/api/download/:id${ID_REGEX}`,
+    auth.dlToken,
+    sendSeekable,
+    require('./download')
+  );
   app.get(
     `/api/download/blob/:id${ID_REGEX}`,
     auth.dlToken,
@@ -126,11 +132,13 @@ module.exports = function(app) {
     auth.dlToken,
     require('./done.js')
   );
+  app.post(`/api/upload/done/:id`, auth.fxa, require('./upload_done.js'));
   app.get(`/api/exists/:id${ID_REGEX}`, require('./exists'));
   app.get(`/api/metadata/:id${ID_REGEX}`, auth.fxa, require('./metadata'));
   app.get('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.get);
   app.post('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.post);
   app.post('/api/upload', auth.fxa, require('./upload'));
+  app.patch('/api/upload', auth.fxa, require('./upload'));
   app.post(`/api/delete/:id${ID_REGEX}`, auth.owner, require('./delete'));
   app.post(`/api/password/:id${ID_REGEX}`, auth.owner, require('./password'));
   app.post(`/api/params/:id${ID_REGEX}`, auth.owner, require('./params'));
