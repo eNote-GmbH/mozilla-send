@@ -9,6 +9,7 @@ const language = require('../middleware/language');
 const pages = require('./pages');
 const filelist = require('./filelist');
 const clientConstants = require('../clientConstants');
+const sendSeekable = require('send-seekable');
 
 const IS_DEV = config.env === 'development';
 const ID_REGEX = '([0-9a-fA-F]{10,16})';
@@ -115,7 +116,12 @@ module.exports = function(app) {
   app.get(`/download/:id${ID_REGEX}`, language, pages.download);
   app.get('/unsupported/:reason', language, pages.unsupported);
   app.get(`/api/download/token/:id${ID_REGEX}`, auth.fxa, require('./token'));
-  app.get(`/api/download/:id${ID_REGEX}`, auth.dlToken, require('./download'));
+  app.get(
+    `/api/download/:id${ID_REGEX}`,
+    auth.dlToken,
+    sendSeekable,
+    require('./download')
+  );
   app.get(
     `/api/download/blob/:id${ID_REGEX}`,
     auth.dlToken,

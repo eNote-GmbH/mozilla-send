@@ -12,11 +12,10 @@ module.exports = async function(req, res) {
         : 'application/octet-stream';
 
     const { length, stream } = await storage.get(id);
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': length
+    res.sendSeekable(stream, {
+      type: contentType,
+      length: length
     });
-    stream.pipe(res);
   } catch (e) {
     log.warn(e);
     res.sendStatus(404);
