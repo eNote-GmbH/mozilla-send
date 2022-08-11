@@ -151,6 +151,7 @@
     "redis-mock": "^0.47.0",
     "selenium-standalone": "^6.24.0",
     "send-seekable": "^1.0.4",
+    "tus-node-server": "^0.7.1",
     "ua-parser-js": "^0.7.31"
   },
   "availableLanguages": [

@@ -10,11 +10,17 @@ const pages = require('./pages');
 const filelist = require('./filelist');
 const clientConstants = require('../clientConstants');
 const sendSeekable = require('send-seekable');
+const tus = require('tus-node-server');
 
 const IS_DEV = config.env === 'development';
-const ID_REGEX = '([0-9a-fA-F]{10,16})';
+const ID_REGEX = '([0-9a-fA-F]{10,16,32})';
 
 module.exports = function(app) {
+  const tusServer = new tus.Server();
+  tusServer.datastore = new tus.FileStore({
+    path: '/files'
+  });
+
   app.set('trust proxy', true);
   app.use(helmet());
   app.use(
@@ -131,6 +137,18 @@ module.exports = function(app) {
     `/api/download/done/:id${ID_REGEX}`,
     auth.dlToken,
     require('./done.js')
+  );
+  app.all(
+    '/files/*',
+    //auth.fxa,
+    function(req, res) {
+      tusServer.handle(req, res);
+    }
+  );
+  app.post(
+    `/api/upload/done/:id`,
+    //auth.fxa,
+    require('./resumable_upload_done.js')
   );
   app.get(`/api/exists/:id${ID_REGEX}`, require('./exists'));
   app.get(`/api/metadata/:id${ID_REGEX}`, auth.fxa, require('./metadata'));
