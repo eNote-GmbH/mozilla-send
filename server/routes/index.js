@@ -138,13 +138,9 @@ module.exports = function(app) {
     auth.dlToken,
     require('./done.js')
   );
-  app.all(
-    '/files/*',
-    //auth.fxa,
-    function(req, res) {
-      tusServer.handle(req, res);
-    }
-  );
+  app.all('/files/*', auth.fxa, function(req, res) {
+    tusServer.handle(req, res);
+  });
   app.post(
     `/api/upload/done/:id`,
     auth.fxa,
