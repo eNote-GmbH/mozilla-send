@@ -16,6 +16,7 @@ our users)
 * the `/api/download/token`, `/api/metadata/` endpoints are protected with FxA authorization
 * the `DEFAULT_EXPIRE_SECONDS` env variable is set to `0` by default (so the service would keep the uploaded files
 forever by default)
+* the partial/resumable uploads/downloads are implemented
 
 - Forked [at][fork-commit] Mozilla's last publicly hosted version
 - _Mozilla_ & _Firefox_ branding [is][remove-branding-pr] removed so we can legally self-host
@@ -64,6 +65,7 @@ Thanks [Mozilla][mozilla] for building this amazing tool!
 * [Deployment](#deployment)
 * [Clients](#clients)
 * [License](#license)
+* [Partial upload](#partial_upload)
 
 ---
 
@@ -162,5 +164,123 @@ located in the `android/app/src/main/assets` directory.
 [Mozilla Public License Version 2.0](LICENSE)
 
 [qrcode.js](https://github.com/kazuhikoarase/qrcode-generator) licensed under MIT
+
+---
+
+## Partial upload
+
+The tests are not (yet?) properly implemented, so here's the example for the partial file upload.
+
+Please, note that the example is supposed to be run inside the [send-docker-compose](https://github.com/eNote-GmbH/send-docker-compose) folder while service is running.
+
+Let's imagine we are going to upload the `docker-compose.yaml` file.
+
+First, let's split the file into two parts (the size of a part would be 750 bytes):
+
+```
+split -b 750 docker-compose.yaml partial_file
+```
+The next step is to create the endpoint for the file upload:
+
+```bash
+curl -X POST -i 'http://localhost:1234/files/' -H 'Tus-Resumable: 1.0.0' -H 'Upload-Length: 1495' -H 'Authorization: Bearer correct_token.correct_token.correct_token'
+```
+
+The result would be
+
+```
+HTTP/1.1 201 Created
+...
+Tus-Resumable: 1.0.0
+Access-Control-Expose-Headers: Authorization, Content-Type, Location, Tus-Extension, Tus-Max-Size, Tus-Resumable, Tus-Version, Upload-Concat, Upload-Defer-Length, Upload-Length, Upload-Metadata, Upload-Offset, X-HTTP-Method-Override, X-Requested-With
+Location: //localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26
+Content-Length: 0
+...
+```
+
+Please, note the `Location` header, we will use this endpoint for further operations
+
+Let's upload the first part of the file (please note the endpoint and the name of the file)
+
+```bash
+curl -X PATCH -H 'Tus-Resumable: 1.0.0' -H 'Upload-Offset: 0' -H 'Content-Type: application/offset+octet-stream' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -T partial_fileaa -i 'http://localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26'
+```
+
+The response
+
+```
+HTTP/1.1 100 Continue
+
+HTTP/1.1 204 No Content
+...
+Tus-Resumable: 1.0.0
+Access-Control-Expose-Headers: Authorization, Content-Type, Location, Tus-Extension, Tus-Max-Size, Tus-Resumable, Tus-Version, Upload-Concat, Upload-Defer-Length, Upload-Length, Upload-Metadata, Upload-Offset, X-HTTP-Method-Override, X-Requested-With
+Upload-Offset: 750
+...
+```
+
+We can check the current state of the file
+
+```bash
+curl -X HEAD -H 'Tus-Resumable: 1.0.0' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -I 'http://localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26'
+```
+
+The response
+
+```
+HTTP/1.1 200 OK
+...
+Upload-Offset: 750
+Upload-Length: 1495
+...
+```
+
+Let's upload the second part:
+
+```bash
+curl -X PATCH -H 'Tus-Resumable: 1.0.0' -H 'Upload-Offset: 750' -H 'Content-Type: application/offset+octet-stream' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -T partial_fileab -i 'http://localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26'
+```
+
+The response
+
+```
+HTTP/1.1 100 Continue
+
+HTTP/1.1 204 No Content
+...
+Tus-Resumable: 1.0.0
+Access-Control-Expose-Headers: Authorization, Content-Type, Location, Tus-Extension, Tus-Max-Size, Tus-Resumable, Tus-Version, Upload-Concat, Upload-Defer-Length, Upload-Length, Upload-Metadata, Upload-Offset, X-HTTP-Method-Override, X-Requested-With
+Upload-Offset: 1495
+...
+```
+
+And finally put the file to the storage:
+
+```bash
+curl -X POST -H 'X-File-Metadata: mwSjvpb1OdHVAFwJGnorKpxaAghiWKAJIOETO4vqUa2lCpR0oPpj3d9XqctrYBZf_0lgUguRdYjvpgpcOyE8gw' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -H 'Content-Type: application/octet-stream' -i 'http://localhost:1234/api/upload/done/49fa07eb359a76416c6825f91c3c7c26'
+```
+
+The response
+
+```
+HTTP/1.1 200 OK
+...
+WWW-Authenticate: send-v1 ZkDjEJDWP2FDLTszl+BGEA==
+Content-Type: application/json; charset=utf-8
+Content-Length: 113
+ETag: W/"71-VlrXKB07UXkePjLjcoa+P8ecgro"
+...
+{"url":"http://localhost:1234/download/f52169e2a822287d/","owner":"cb7cd6130108ab70b596","id":"f52169e2a822287d"}
+```
+
+If the file is small enough, it can be uploaded in one part
+
+```
+curl -X POST -i 'http://localhost:1234/files/' -H 'Tus-Resumable: 1.0.0' -H 'Upload-Length: 12345678' -H 'Authorization: Bearer correct_token.correct_token.correct_token'
+
+curl -X PATCH -H 'Tus-Resumable: 1.0.0' -H 'Upload-Offset: 0' -H 'Content-Type: application/offset+octet-stream' -H 'Authorization: Bearer correct_token.correct_token.correct_token' --upload-file ./docker-compose.yaml -i 'http://localhost:1234/files/b5fd3212cefdef45a716ac5c14e4efe2'
+
+curl -X POST -H 'X-File-Metadata: mwSjvpb1OdHVAFwJGnorKpxaAghiWKAJIOETO4vqUa2lCpR0oPpj3d9XqctrYBZf_0lgUguRdYjvpgpcOyE8gw' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -H 'Content-Type: application/octet-stream' -i 'http://localhost:1234/api/upload/done/b5fd3212cefdef45a716ac5c14e4efe2'
+```
 
 ---
