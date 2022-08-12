@@ -1,4 +1,3 @@
-const fss = require('fs');
 const createReadStream = require('fs').createReadStream;
 
 const crypto = require('crypto');
@@ -28,27 +27,18 @@ module.exports = async function(req, res) {
     contentType
   };
 
-  console.log('newId', newId, 'owner', owner, 'meta', meta);
-
   try {
     const limiter = new Limiter(encryptedSize(config.max_file_size));
     const fileName = '.'.concat(config.resumable_file_dir, '/', req.params.id);
-    console.log('fileName to put to storage', fileName);
-    console.log('file exists', fss.existsSync(fileName));
     const sourceFileStream = createReadStream(fileName);
     const fileStream = sourceFileStream.pipe(limiter);
-    console.log('stream created', fileStream);
 
     //this hasn't been updated to expiration time setting yet
     //if you want to fallback to this code add this
     await storage.set(newId, fileStream, meta, config.default_expire_seconds);
     const url = `${config.deriveBaseUrl(req)}/download/${newId}/`;
 
-    console.log('url', url);
-
     res.set('WWW-Authenticate', `send-v1 ${meta.nonce}`);
-
-    console.log('setting json');
 
     res.json({
       url,
