@@ -1,9 +1,12 @@
+const fss = require('fs');
 const createReadStream = require('fs').createReadStream;
 
 const crypto = require('crypto');
 const storage = require('../storage');
 const config = require('../config');
 const mozlog = require('../log');
+const Limiter = require('../limiter');
+const { encryptedSize } = require('../../app/utils');
 
 const log = mozlog('send.upload');
 
@@ -20,7 +23,7 @@ module.exports = async function(req, res) {
     owner,
     metadata,
     auth: auth.split(' ')[1],
-    user: req.user,
+    user: req.user.client_id,
     nonce: crypto.randomBytes(16).toString('base64'),
     contentType
   };
@@ -28,10 +31,13 @@ module.exports = async function(req, res) {
   console.log('newId', newId, 'owner', owner, 'meta', meta);
 
   try {
-    //const limiter = new Limiter(encryptedSize(config.max_file_size));
+    const limiter = new Limiter(encryptedSize(config.max_file_size));
     const fileName = '.'.concat(config.resumable_file_dir, '/', req.params.id);
     console.log('fileName to put to storage', fileName);
-    const fileStream = createReadStream(fileName);
+    console.log('file exists', fss.existsSync(fileName));
+    const sourceFileStream = createReadStream(fileName);
+    const fileStream = sourceFileStream.pipe(limiter);
+    console.log('stream created', fileStream);
 
     //this hasn't been updated to expiration time setting yet
     //if you want to fallback to this code add this

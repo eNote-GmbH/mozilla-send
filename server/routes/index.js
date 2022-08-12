@@ -13,12 +13,12 @@ const sendSeekable = require('send-seekable');
 const tus = require('tus-node-server');
 
 const IS_DEV = config.env === 'development';
-const ID_REGEX = '([0-9a-fA-F]{10,16,32})';
+const ID_REGEX = '([0-9a-fA-F]{10,16})';
 
 module.exports = function(app) {
   const tusServer = new tus.Server();
   tusServer.datastore = new tus.FileStore({
-    path: '/files'
+    path: config.resumable_file_dir
   });
 
   app.set('trust proxy', true);
@@ -147,7 +147,7 @@ module.exports = function(app) {
   );
   app.post(
     `/api/upload/done/:id`,
-    //auth.fxa,
+    auth.fxa,
     require('./resumable_upload_done.js')
   );
   app.get(`/api/exists/:id${ID_REGEX}`, require('./exists'));

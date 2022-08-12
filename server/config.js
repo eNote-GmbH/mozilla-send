@@ -196,7 +196,7 @@ const conf = convict({
   },
   resumable_file_dir: {
     format: 'String',
-    default: `${tmpdir()}${path.sep}send-${randomBytes(4).toString('hex')}`,
+    default: `/files`,
     env: 'RESUMABLE_FILE_DIR'
   },
   fxa_required: {
