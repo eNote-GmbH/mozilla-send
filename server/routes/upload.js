@@ -20,7 +20,7 @@ module.exports = async function(req, res) {
     owner,
     metadata,
     auth: auth.split(' ')[1],
-    user: req.user,
+    user: req.user.client_id,
     nonce: crypto.randomBytes(16).toString('base64'),
     contentType
   };
