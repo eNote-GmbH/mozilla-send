@@ -73,7 +73,13 @@ const serviceWorker = {
       }
     ]
   },
-  plugins: [new webpack.IgnorePlugin(/\.\.\/dist/)]
+  plugins: [
+    new webpack.IgnorePlugin({
+      checkResource: (resource, ctx) => {
+        return ctx.includes('dist');
+      }
+    })
+  ]
 };
 
 const web = {
@@ -174,18 +180,24 @@ const web = {
     ]
   },
   plugins: [
-    new CopyPlugin([
-      {
-        context: 'public',
-        from: '*.*'
-      }
-    ]),
+    new CopyPlugin({
+      patterns: [
+        {
+          context: 'public',
+          from: '*.*'
+        }
+      ]
+    }),
     new webpack.EnvironmentPlugin(['NODE_ENV']),
-    new webpack.IgnorePlugin(/\.\.\/dist/), // used in common/*.js
+    new webpack.IgnorePlugin({
+      checkResource: (resource, ctx) => {
+        return ctx.includes('dist');
+      }
+    }), // used in common/*.js
     new MiniCssExtractPlugin(),
     new VersionPlugin(), // used for the /__version__ route
     new AndroidIndexPlugin(),
-    new ManifestPlugin() // used by server side to resolve hashed assets
+    new ManifestPlugin.WebpackManifestPlugin() // used by server side to resolve hashed assets
   ],
   devtool: 'source-map',
   devServer: {

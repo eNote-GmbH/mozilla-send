@@ -36,12 +36,15 @@ const server = app.listen(async function() {
     page.on('pageerror', console.log.bind(console));
     await page.setDefaultNavigationTimeout(60000);
     await page.goto(`http://127.0.0.1:${server.address().port}/test`);
-    await page.waitFor(() => typeof runner.testResults !== 'undefined', {
-      polling: 1000,
-      timeout: 15000
-    });
+    await page.waitForFunction(
+      () => typeof runner.testResults !== 'undefined',
+      {
+        polling: 1000,
+        timeout: 15000
+      }
+    );
     const results = await page.evaluate(() => runner.testResults);
-    const coverage = await page.evaluate(() => __coverage__);
+    const coverage = await page.evaluate(() => __covergae__);
     if (coverage) {
       const dir = path.resolve(__dirname, '../../.nyc_output');
       mkdirp.sync(dir);
