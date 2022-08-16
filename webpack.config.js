@@ -4,7 +4,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const VersionPlugin = require('./build/version_plugin');
 const AndroidIndexPlugin = require('./build/android_index_plugin');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const webJsOptions = {
   babelrc: false,
@@ -155,17 +155,7 @@ const web = {
       {
         // creates style.css with all styles
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          use: [
-            {
-              loader: 'css-loader',
-              options: {
-                importLoaders: 1
-              }
-            },
-            'postcss-loader'
-          ]
-        })
+        use: [MiniCssExtractPlugin.loader, 'css-loader']
       },
       {
         test: /\.ftl$/,
@@ -192,9 +182,7 @@ const web = {
     ]),
     new webpack.EnvironmentPlugin(['NODE_ENV']),
     new webpack.IgnorePlugin(/\.\.\/dist/), // used in common/*.js
-    new ExtractTextPlugin({
-      filename: '[name].[md5:contenthash:8].css'
-    }),
+    new MiniCssExtractPlugin(),
     new VersionPlugin(), // used for the /__version__ route
     new AndroidIndexPlugin(),
     new ManifestPlugin() // used by server side to resolve hashed assets
