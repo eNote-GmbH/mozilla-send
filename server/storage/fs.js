@@ -4,10 +4,14 @@ const path = require('path');
 
 class FSStorage {
   constructor(config, log) {
+    log.info('fs', {
+      msg: 'Initializing local file storage backend',
+      file_dir: config.file_dir,
+    });
     this.log = log;
     this.dir = config.file_dir;
     fss.mkdirSync(this.dir, {
-      recursive: true
+      recursive: true,
     });
   }
 
@@ -16,8 +20,13 @@ class FSStorage {
     return result.size;
   }
 
-  getStream(id) {
-    return fss.createReadStream(path.join(this.dir, id));
+  async getStream(id, range) {
+    const options = {};
+    if (range) {
+      options.start = range.start;
+      options.end = range.end;
+    }
+    return fss.createReadStream(path.join(this.dir, id), options);
   }
 
   set(id, file) {
@@ -25,10 +34,10 @@ class FSStorage {
       const filepath = path.join(this.dir, id);
       const fstream = fss.createWriteStream(filepath);
       file.pipe(fstream);
-      file.on('error', err => {
+      file.on('error', (err) => {
         fstream.destroy(err);
       });
-      fstream.on('error', err => {
+      fstream.on('error', (err) => {
         this.del(id);
         reject(err);
       });

@@ -1,9 +1,8 @@
 import Nanobus from 'nanobus';
 import OwnedFile from './ownedFile';
 import Keychain from './keychain';
-import { arrayToB64, bytes } from './utils';
+import { arrayToB64, bytes, encryptedSize } from './utils';
 import { uploadWs } from './api';
-import { encryptedSize } from './utils';
 
 export default class FileSender extends Nanobus {
   constructor() {
@@ -25,7 +24,7 @@ export default class FileSender extends Nanobus {
   get sizes() {
     return {
       partialSize: bytes(this.progress[0]),
-      totalSize: bytes(this.progress[1])
+      totalSize: bytes(this.progress[1]),
     };
   }
 
@@ -61,7 +60,7 @@ export default class FileSender extends Nanobus {
       archive.timeLimit,
       archive.dlimit,
       bearerToken,
-      p => {
+      (p) => {
         this.progress = [p, totalSize];
         this.emit('progress');
       }
@@ -96,7 +95,7 @@ export default class FileSender extends Nanobus {
         nonce: this.keychain.nonce,
         ownerToken: result.ownerToken,
         dlimit: archive.dlimit,
-        timeLimit: archive.timeLimit
+        timeLimit: archive.timeLimit,
       });
 
       return ownedFile;

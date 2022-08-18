@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const config = require('./config');
 
 function makeToken(secret, counter) {
   const hmac = crypto.createHmac('sha256', secret);
@@ -12,7 +13,7 @@ class Metadata {
     this.contentType = obj.contentType;
     this.dl = +obj.dl || 0;
     this.dlToken = +obj.dlToken || 0;
-    this.dlimit = +obj.dlimit || 1;
+    this.dlimit = +obj.dlimit || config.default_downloads;
     this.pwd = !!+obj.pwd;
     this.owner = obj.owner;
     this.metadata = obj.metadata;
@@ -26,12 +27,12 @@ class Metadata {
   }
 
   async getDownloadToken() {
-    if (this.dlToken >= this.dlimit) {
+    if (this.dlimit > 0 && this.dlToken >= this.dlimit) {
       throw new Error('limit');
     }
     this.dlToken = await this.storage.incrementField(this.id, 'dlToken');
     // another request could have also incremented
-    if (this.dlToken > this.dlimit) {
+    if (this.dlimit > 0 && this.dlToken > this.dlimit) {
       throw new Error('limit');
     }
     return makeToken(this.owner, this.dlToken);

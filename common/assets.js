@@ -21,7 +21,7 @@ function setPrefix(name) {
 
 function getMatches(match) {
   return Object.keys(assets)
-    .filter(k => match.test(k))
+    .filter((k) => match.test(k))
     .map(getAsset);
 }
 
@@ -29,12 +29,13 @@ const instance = {
   setPrefix: setPrefix,
   get: getAsset,
   match: getMatches,
-  setMiddleware: function(middleware) {
+  setMiddleware: function (middleware) {
     function getManifest() {
+      const fileSystem =
+        middleware.fileSystem ||
+        (middleware.context && middleware.context.outputFileSystem);
       return JSON.parse(
-        middleware.fileSystem.readFileSync(
-          middleware.getFilenameFromUrl('/manifest.json')
-        )
+        fileSystem.readFileSync(middleware.getFilenameFromUrl('/manifest.json'))
       );
     }
     if (middleware) {
@@ -45,11 +46,11 @@ const instance = {
       instance.match = function matchAssetWithMiddleware(match) {
         const m = getManifest();
         return Object.keys(m)
-          .filter(k => match.test(k))
-          .map(k => prefix + m[k]);
+          .filter((k) => match.test(k))
+          .map((k) => prefix + m[k]);
       };
     }
-  }
+  },
 };
 
 module.exports = instance;

@@ -1,15 +1,30 @@
-const Limiter = require('../limiter');
-const { encryptedSize } = require('../../app/utils');
-const createReadStream = require('fs').createReadStream;
+const { createReadStream, rmSync } = require('fs');
+const path = require('path');
 const uploader = require('../utils');
 
-const fileStreamUpload = function(req, res, config) {
-  const limiter = new Limiter(encryptedSize(config.max_file_size));
-  const fileName = '.'.concat(config.resumable_file_dir, '/', req.params.id);
-  const sourceFileStream = createReadStream(fileName);
-  return sourceFileStream.pipe(limiter);
+const UPLOAD_BUFFER = 256 * 2 ** 10;
+
+const fileStreamUpload = function (req, res, config) {
+  const id = req.params.resumeId;
+  if (!id) {
+    return null;
+  }
+
+  const filePath = path.join(config.resumable_file_dir, id);
+  try {
+    const stream = createReadStream(filePath, { highWaterMark: UPLOAD_BUFFER });
+    stream.on('close', () => {
+      rmSync(filePath, { force: true });
+    });
+    return stream;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return null;
+    }
+    throw err;
+  }
 };
 
-module.exports = async function(req, res) {
+module.exports = async function (req, res) {
   await uploader(req, res, fileStreamUpload);
 };

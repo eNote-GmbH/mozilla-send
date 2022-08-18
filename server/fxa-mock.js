@@ -4,7 +4,7 @@ const KEY_SCOPE = config.fxa_key_scope;
 let fxaConfig = null;
 let lastConfigRefresh = 0;
 
-const correct_token = 'correct_token.correct_token.correct_token';
+const CORRECT_TOKEN = 'correct_token.correct_token.correct_token';
 
 async function getFxaConfig() {
   if (fxaConfig && Date.now() - lastConfigRefresh < 1000 * 60 * 5) {
@@ -24,7 +24,7 @@ async function getFxaConfig() {
       response_types_supported: ['code', 'token'],
       scopes_supported: ['openid', 'profile', 'email'],
       subject_types_supported: ['public'],
-      token_endpoint_auth_methods_supported: ['client_secret_post']
+      token_endpoint_auth_methods_supported: ['client_secret_post'],
     };
     fxaConfig.key_scope = KEY_SCOPE;
     lastConfigRefresh = Date.now();
@@ -35,14 +35,14 @@ async function getFxaConfig() {
 }
 
 module.exports = {
-  token: correct_token,
+  token: CORRECT_TOKEN,
   getFxaConfig,
-  verify: async function(token) {
-    if (!token) {
+  verify: async function (requestToken) {
+    if (!requestToken) {
       return null;
     }
 
-    if (token == correct_token) {
+    if (requestToken == CORRECT_TOKEN) {
       return {
         iss: 'https://api-accounts_enote',
         aud: 'https://sync_dev_enote',
@@ -53,10 +53,10 @@ module.exports = {
         scope:
           'profile:write email https://identity.mozilla.com/apps/oldsync escore search metadata quota sources subscriptions',
         sub: '7aaa754b64d7425eb26fc71594bfb98e',
-        'fxa-profileChangedAt': 1650695379020
+        'fxa-profileChangedAt': 1650695379020,
       };
     }
 
     return null;
-  }
+  },
 };

@@ -5,10 +5,12 @@ env:
 extends:
   - eslint:recommended
   - prettier
+  - plugin:import/recommended
   - plugin:n/recommended
   - plugin:security/recommended
 
 plugins:
+  - import
   - n
   - security
 
@@ -29,3 +31,7 @@ rules:
 
   no-unused-vars: [error, {argsIgnorePattern: "^_|err|event|next|reject"}]
   require-atomic-updates: warn
+
+settings:
+  import/ignore:
+    - app/locale.js

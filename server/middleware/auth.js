@@ -4,11 +4,14 @@ const storage = require('../storage');
 const fxa = require('../fxa');
 const log = mozlog('send.auth');
 
-const get_valid_meta = async function(storage, req) {
+const get_valid_meta = async function (storage, req) {
   if (!req.meta) {
     const id = req.params.id;
     if (id) {
-      req.meta = await storage.metadata(id);
+      const meta = await storage.metadata(id);
+      if (!req.meta) {
+        req.meta = meta;
+      }
     }
   }
   if (req.meta && !req.meta.dead) {
@@ -18,7 +21,7 @@ const get_valid_meta = async function(storage, req) {
   return null;
 };
 
-const get_auth_info = function(req) {
+const get_auth_info = function (req) {
   const authHeader = req.header('Authorization');
   if (authHeader) {
     return authHeader.split(' ', 2);
@@ -26,26 +29,31 @@ const get_auth_info = function(req) {
   return [null, null];
 };
 
-const test_auth_fxa = async function(meta, req, auth_type, auth_value) {
+const test_auth_fxa = async function (meta, req, auth_type, auth_value) {
   if (auth_type == 'Bearer' && auth_value) {
     req.user = await fxa.verify(auth_value);
   }
 
+  let success = false;
   if (req.user) {
     if (meta && meta.user) {
       const metaAuth = Buffer.from(meta.user, 'utf8');
       const userAuth = Buffer.from(req.user, 'utf8');
-      return crypto.timingSafeEqual(metaAuth, userAuth);
+      success = crypto.timingSafeEqual(metaAuth, userAuth);
     } else {
       // no meta but we have a valid user
-      return true;
+      success = true;
     }
   }
 
-  return false;
+  if (success) {
+    req.fxa_user = req.user;
+  }
+
+  return success;
 };
 
-const test_auth_hmac = async function(
+const test_auth_hmac = async function (
   meta,
   storage,
   req,
@@ -78,14 +86,22 @@ const test_auth_hmac = async function(
   return false;
 };
 
-const test_auth_dlToken = async function(meta, auth_type, auth_value) {
+const test_auth_dlToken = async function (meta, auth_type, auth_value) {
   if (auth_type == 'Bearer' && auth_value) {
-    return await meta.verifyDownloadToken(auth_value);
+    try {
+      return await meta.verifyDownloadToken(auth_value);
+    } catch (err) {
+      if (err instanceof TypeError) {
+        // we may see an actual OAuth token here
+        return false;
+      }
+      throw err;
+    }
   }
   return false;
 };
 
-const test_auth_owner = async function(meta, req) {
+const test_auth_owner = async function (meta, req) {
   const ownerToken = req.body.owner_token;
   if (ownerToken && meta.owner) {
     const metaOwner = Buffer.from(meta.owner, 'utf8');
@@ -98,7 +114,8 @@ const test_auth_owner = async function(meta, req) {
 };
 
 module.exports = {
-  hmac: async function(req, res, next) {
+  hmac: async function (req, res, next) {
+    let auth_success = false;
     try {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
@@ -107,7 +124,7 @@ module.exports = {
           return res.sendStatus(404);
         }
 
-        req.authorized = await test_auth_hmac(
+        auth_success = await test_auth_hmac(
           meta,
           storage,
           req,
@@ -116,73 +133,81 @@ module.exports = {
           token
         );
 
-        if (!req.authorized) {
+        if (!auth_success) {
           // always allow FxA-authenticated users to see their data
-          req.authorized = await test_auth_fxa(meta, req, auth_type, token);
+          auth_success = await test_auth_fxa(meta, req, auth_type, token);
         }
       }
     } catch (e) {
       log.warn('hmac', e);
-      req.authorized = false;
+      auth_success = false;
     }
 
-    if (req.authorized) {
+    // eslint-disable-next-line require-atomic-updates
+    req.authorized = auth_success;
+
+    if (auth_success) {
       next();
     } else {
       res.sendStatus(401);
     }
   },
-  owner: async function(req, res, next) {
+  owner: async function (req, res, next) {
+    let auth_success = false;
     try {
       const meta = await get_valid_meta(storage, req);
       if (!meta) {
         return res.sendStatus(404);
       }
 
-      req.authorized = await test_auth_owner(meta, req);
+      auth_success = await test_auth_owner(meta, req);
 
-      if (!req.authorized) {
+      if (!auth_success) {
         const [auth_type, token] = get_auth_info(req);
         if (token) {
           // always allow FxA-authenticated users to see their data
-          req.authorized = await test_auth_fxa(meta, req, auth_type, token);
+          auth_success = await test_auth_fxa(meta, req, auth_type, token);
         }
       }
     } catch (e) {
       log.warn('owner', e);
-      req.authorized = false;
+      auth_success = false;
     }
 
-    if (req.authorized) {
+    // eslint-disable-next-line require-atomic-updates
+    req.authorized = auth_success;
+
+    if (auth_success) {
       next();
     } else {
       res.sendStatus(401);
     }
   },
-  fxa: async function(req, res, next) {
+  fxa: async function (req, res, next) {
+    let auth_success = false;
     try {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
         const meta = await get_valid_meta(storage, req);
         // let's try to find the user first by the JWT bearer
-        req.authorized = await test_auth_fxa(meta, req, auth_type, token);
-        // check for both meta and req.user(for new users or no file id param in req)
-        if (!meta && !req.user) {
-          return res.sendStatus(404);
-        }
+        auth_success = await test_auth_fxa(meta, req, auth_type, token);
       }
     } catch (e) {
       log.warn('fxa', e);
-      req.authorized = false;
+      auth_success = false;
     }
 
-    if (req.authorized) {
+    // eslint-disable-next-line require-atomic-updates
+    req.authorized = auth_success;
+
+    if (auth_success) {
       next();
     } else {
       res.sendStatus(401);
     }
   },
-  dlToken: async function(req, res, next) {
+  dlToken: async function (req, res, next) {
+    let auth_success = false;
     try {
       const [auth_type, token] = get_auth_info(req);
       if (token) {
@@ -191,11 +216,11 @@ module.exports = {
           return res.sendStatus(404);
         }
 
-        req.authorized = await test_auth_dlToken(meta, auth_type, token);
+        auth_success = await test_auth_dlToken(meta, auth_type, token);
 
-        if (!req.authorized) {
+        if (!auth_success) {
           // try with HMAC next, since that was how it used to be
-          req.authorized = await test_auth_hmac(
+          auth_success = await test_auth_hmac(
             meta,
             storage,
             req,
@@ -205,20 +230,23 @@ module.exports = {
           );
         }
 
-        if (!req.authorized) {
+        if (!auth_success) {
           // always allow FxA-authenticated users to see their data
-          req.authorized = await test_auth_fxa(meta, req, auth_type, token);
+          auth_success = await test_auth_fxa(meta, req, auth_type, token);
         }
       }
     } catch (e) {
       log.warn('dlToken', e);
-      req.authorized = false;
+      auth_success = false;
     }
 
-    if (req.authorized) {
+    // eslint-disable-next-line require-atomic-updates
+    req.authorized = auth_success;
+
+    if (auth_success) {
       next();
     } else {
       res.sendStatus(401);
     }
-  }
+  },
 };

@@ -9,7 +9,7 @@ const {
   list,
   percent,
   platform,
-  timeLeft
+  timeLeft,
 } = require('../utils');
 const expiryOptions = require('./expiryOptions');
 
@@ -18,8 +18,8 @@ function expiryInfo(translate, archive) {
     return raw(
       translate('archiveExpiryInfoWithoutTimer', {
         downloadCount: translate('downloadCount', {
-          num: archive.dlimit - archive.dtotal
-        })
+          num: archive.dlimit - archive.dtotal,
+        }),
       })
     );
   } else {
@@ -27,9 +27,9 @@ function expiryInfo(translate, archive) {
     return raw(
       translate('archiveExpiryInfo', {
         downloadCount: translate('downloadCount', {
-          num: archive.dlimit - archive.dtotal
+          num: archive.dlimit - archive.dtotal,
         }),
-        timespan: translate(l10n.id, l10n)
+        timespan: translate(l10n.id, l10n),
       })
     );
   }
@@ -54,9 +54,7 @@ function password(state) {
           autocomplete="off"
           onchange="${togglePasswordInput}"
         />
-        <label for="add-password">
-          ${state.translate('addPassword')}
-        </label>
+        <label for="add-password"> ${state.translate('addPassword')} </label>
       </div>
       <div class="relative inline-block my-1">
         <input
@@ -140,7 +138,7 @@ function password(state) {
 
     if (length === MAX_LENGTH) {
       pwdmsg.textContent = state.translate('maxPasswordLength', {
-        length: MAX_LENGTH
+        length: MAX_LENGTH,
       });
     } else {
       pwdmsg.textContent = '';
@@ -210,10 +208,10 @@ function archiveDetails(translate, archive) {
             />
           </svg>
           ${translate('fileCount', {
-            num: archive.manifest.files.length
+            num: archive.manifest.files.length,
           })}
         </summary>
-        ${list(archive.manifest.files.map(f => fileInfo(f)))}
+        ${list(archive.manifest.files.map((f) => fileInfo(f)))}
       </details>
     `;
   }
@@ -223,7 +221,7 @@ function archiveDetails(translate, archive) {
   }
 }
 
-module.exports = function(state, emit, archive) {
+module.exports = function (state, emit, archive) {
   const copyOrShare =
     state.capabilities.share || platform() === 'android'
       ? html`
@@ -265,9 +263,7 @@ module.exports = function(state, emit, archive) {
             ${state.translate('downloadButtonLabel')}
           </a>
         `
-      : html`
-          <div></div>
-        `;
+      : html` <div></div> `;
   return html`
     <send-archive
       id="archive-${archive.id}"
@@ -291,9 +287,7 @@ module.exports = function(state, emit, archive) {
       </div>
       ${archiveDetails(state.translate, archive)}
       <hr class="w-full border-t my-4 dark:border-grey-70" />
-      <div class="flex justify-between w-full">
-        ${dl} ${copyOrShare}
-      </div>
+      <div class="flex justify-between w-full">${dl} ${copyOrShare}</div>
     </send-archive>
   `;
 
@@ -323,7 +317,7 @@ module.exports = function(state, emit, archive) {
           title: state.translate('-send-brand'),
           text: `Download "${archive.name}" with Send: simple, safe file sharing`,
           //state.translate('shareMessage', { name }),
-          url: archive.url
+          url: archive.url,
         });
       } catch (e) {
         // ignore
@@ -332,7 +326,7 @@ module.exports = function(state, emit, archive) {
   }
 };
 
-module.exports.wip = function(state, emit) {
+module.exports.wip = function (state, emit) {
   return html`
     <send-upload-area
       class="flex flex-col bg-white h-full w-full dark:bg-grey-90"
@@ -341,7 +335,7 @@ module.exports.wip = function(state, emit) {
       ${list(
         Array.from(state.archive.files)
           .reverse()
-          .map(f =>
+          .map((f) =>
             fileInfo(f, remove(f, state.translate('deleteButtonHover')))
           ),
         'flex-shrink bg-grey-10 rounded-t overflow-y-auto px-6 py-4 md:h-full md:max-h-half-screen dark:bg-black',
@@ -375,7 +369,7 @@ module.exports.wip = function(state, emit) {
           </label>
           <div class="font-normal text-sm text-grey-70 dark:text-grey-40">
             ${state.translate('totalSize', {
-              size: bytes(state.archive.size)
+              size: bytes(state.archive.size),
             })}
           </div>
         </div>
@@ -441,7 +435,7 @@ module.exports.wip = function(state, emit) {
   }
 };
 
-module.exports.uploading = function(state, emit) {
+module.exports.uploading = function (state, emit) {
   const progress = state.transfer.progressRatio;
   const progressPercent = percent(progress);
   const archive = state.archive;
@@ -455,7 +449,7 @@ module.exports.uploading = function(state, emit) {
         ${expiryInfo(state.translate, {
           dlimit: state.archive.dlimit,
           dtotal: 0,
-          expiresAt: Date.now() + 500 + state.archive.timeLimit * 1000
+          expiresAt: Date.now() + 500 + state.archive.timeLimit * 1000,
         })}
       </div>
       <div class="link-primary text-sm font-medium mt-2">
@@ -479,41 +473,41 @@ module.exports.uploading = function(state, emit) {
   }
 };
 
-module.exports.empty = function(state, emit) {
+module.exports.empty = function (state, emit) {
   const upsell =
     state.user.loggedIn || !state.capabilities.account
       ? ''
       : html`
           <button
             class="center font-medium text-sm link-primary mt-4 mb-2"
-            onclick="${event => {
+            onclick="${(event) => {
               event.stopPropagation();
               emit('signup-cta', 'drop');
             }}"
           >
             ${state.translate('signInSizeBump', {
-              size: bytes(state.LIMITS.MAX_FILE_SIZE)
+              size: bytes(state.LIMITS.MAX_FILE_SIZE),
             })}
           </button>
         `;
   return html`
     <send-upload-area
       class="flex flex-col items-center justify-center border-2 border-dashed border-grey-transparent rounded-default px-6 py-16 h-full w-full dark:border-grey-60"
-      onclick="${e => {
+      onclick="${(e) => {
         if (e.target.tagName !== 'LABEL') {
           document.getElementById('file-upload').click();
         }
       }}"
     >
       <svg class="w-10 h-10 link-primary">
-        <use xlink:href="/${assets.get('addfiles.svg')}#plus" />
+        <use xlink:href="${assets.get('addfiles.svg')}#plus" />
       </svg>
       <div class="pt-6 pb-2 text-center text-lg font-bold tracking-wide">
         ${state.translate('dragAndDropFiles')}
       </div>
       <div class="pb-6 text-center text-base">
         ${state.translate('orClickWithSize', {
-          size: bytes(state.user.maxSize)
+          size: bytes(state.user.maxSize),
         })}
       </div>
       <input
@@ -524,14 +518,14 @@ module.exports.empty = function(state, emit) {
         onfocus="${focus}"
         onblur="${blur}"
         onchange="${add}"
-        onclick="${e => e.stopPropagation()}"
+        onclick="${(e) => e.stopPropagation()}"
       />
       <label
         for="file-upload"
         role="button"
         class="btn rounded-lg flex items-center mt-4"
         title="${state.translate('addFilesButton', {
-          size: bytes(state.user.maxSize)
+          size: bytes(state.user.maxSize),
         })}"
       >
         ${state.translate('addFilesButton')}
@@ -556,7 +550,7 @@ module.exports.empty = function(state, emit) {
   }
 };
 
-module.exports.preview = function(state, emit) {
+module.exports.preview = function (state, emit) {
   const archive = state.fileInfo;
   if (archive.open === undefined) {
     archive.open = true;
@@ -594,7 +588,7 @@ module.exports.preview = function(state, emit) {
   }
 };
 
-module.exports.downloading = function(state) {
+module.exports.downloading = function (state) {
   const archive = state.fileInfo;
   const progress = state.transfer.progressRatio;
   const progressPercent = percent(progress);

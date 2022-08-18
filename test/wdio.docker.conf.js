@@ -16,13 +16,14 @@ exports.config = Object.assign({}, common.config, {
   baseUrl: `http://${ip.address()}:8000`,
   maxInstances: 1,
   services: ['docker', require('./testServer')],
+  dockerLogs: './logs',
   dockerOptions: {
     image: 'selenium/standalone-firefox-debug',
     healthCheck: 'http://localhost:4444',
     options: {
       p: ['4444:4444', '5900:5900'],
       mount: `type=bind,source=${dir},destination=${dir},consistency=delegated`,
-      shmSize: '2g'
-    }
-  }
+      shmSize: '2g',
+    },
+  },
 });

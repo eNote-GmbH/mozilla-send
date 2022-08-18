@@ -4,6 +4,16 @@
 .nyc_output
 .vscode
 
+.dockerignore
+Dockerfile
+.docker-composer.yml
+.htmllintrc
+.husky
+Makefile
+.prettierignore
+s3-lifecycle-example.xml
+.stylelintrc
+
 android
 assets_src
 coverage
@@ -11,6 +21,7 @@ dist
 docs
 firefox
 ios
+logs
 node_modules
 test/integration/downloads
 
