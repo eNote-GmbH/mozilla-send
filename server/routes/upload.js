@@ -1,7 +1,13 @@
 const Limiter = require('../limiter');
 const { encryptedSize } = require('../../app/utils');
-
+const config = require('../config');
+const tus = require('tus-node-server');
+const tusServer = new tus.Server();
 const uploader = require('../utils');
+
+tusServer.datastore = new tus.FileStore({
+  path: config.resumable_file_dir
+});
 
 const reqStreamUpload = function(req, res, config) {
   const limiter = new Limiter(encryptedSize(config.max_file_size));
@@ -9,5 +15,9 @@ const reqStreamUpload = function(req, res, config) {
 };
 
 module.exports = async function(req, res) {
-  await uploader(req, res, reqStreamUpload);
+  if (req.header('Tus-Resumable')) {
+    tusServer.handle(req, res);
+  } else {
+    await uploader(req, res, reqStreamUpload);
+  }
 };

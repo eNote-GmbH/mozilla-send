@@ -10,17 +10,11 @@ const pages = require('./pages');
 const filelist = require('./filelist');
 const clientConstants = require('../clientConstants');
 const sendSeekable = require('send-seekable');
-const tus = require('tus-node-server');
 
 const IS_DEV = config.env === 'development';
 const ID_REGEX = '([0-9a-fA-F]{10,16})';
 
 module.exports = function(app) {
-  const tusServer = new tus.Server();
-  tusServer.datastore = new tus.FileStore({
-    path: config.resumable_file_dir
-  });
-
   app.set('trust proxy', true);
   app.use(helmet());
   app.use(
@@ -138,19 +132,13 @@ module.exports = function(app) {
     auth.dlToken,
     require('./done.js')
   );
-  app.all('/files/*', auth.fxa, function(req, res) {
-    tusServer.handle(req, res);
-  });
-  app.post(
-    `/api/upload/done/:id`,
-    auth.fxa,
-    require('./resumable_upload_done.js')
-  );
+  app.post(`/api/upload/done/:id`, auth.fxa, require('./upload_done.js'));
   app.get(`/api/exists/:id${ID_REGEX}`, require('./exists'));
   app.get(`/api/metadata/:id${ID_REGEX}`, auth.fxa, require('./metadata'));
   app.get('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.get);
   app.post('/api/filelist/:kid([\\w-]{16})', auth.fxa, filelist.post);
   app.post('/api/upload', auth.fxa, require('./upload'));
+  app.patch('/api/upload', auth.fxa, require('./upload'));
   app.post(`/api/delete/:id${ID_REGEX}`, auth.owner, require('./delete'));
   app.post(`/api/password/:id${ID_REGEX}`, auth.owner, require('./password'));
   app.post(`/api/params/:id${ID_REGEX}`, auth.owner, require('./params'));
