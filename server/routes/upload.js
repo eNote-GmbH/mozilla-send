@@ -2,9 +2,9 @@ const Limiter = require('../limiter');
 const { encryptedSize } = require('../../app/utils');
 const config = require('../config');
 const tus = require('tus-node-server');
-const tusServer = new tus.Server();
 const uploader = require('../utils');
 
+const tusServer = new tus.Server();
 tusServer.datastore = new tus.FileStore({
   path: config.resumable_file_dir
 });
