@@ -6,13 +6,14 @@ const mozlog = require('./log');
 const log = mozlog('send.upload');
 
 module.exports = async function(req, res, streamPreparator) {
-  const newId = crypto.randomBytes(8).toString('hex');
   const metadata = req.header('X-File-Metadata');
   const auth = req.header('Authorization');
-  const contentType = req.header('Content-Type');
-  if (!metadata || !auth) {
+  if (!metadata || !auth || !req.user) {
     return res.sendStatus(400);
   }
+
+  const contentType = req.header('Content-Type');
+  const newId = crypto.randomBytes(8).toString('hex');
   const owner = crypto.randomBytes(10).toString('hex');
   const meta = {
     owner,

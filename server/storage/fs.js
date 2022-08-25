@@ -6,7 +6,7 @@ class FSStorage {
   constructor(config, log) {
     this.log = log;
     this.dir = config.file_dir;
-    fs.mkdirSync(this.dir, {
+    fss.mkdirSync(this.dir, {
       recursive: true
     });
   }

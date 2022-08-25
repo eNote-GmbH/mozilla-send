@@ -1,85 +1,60 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const { ServerResponse } = require('http');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire').noCallThru();
-const fs = require('fs');
 const tus = require('tus-node-server');
+const config = require('../../server/config');
 
-const tusServer = sinon.createStubInstance(tus.Server, {
-  handle: sinon.stub().returnsThis()
+const tusServer = new tus.Server();
+const datastore = new tus.DataStore({
+  path: 'dummy'
 });
 
-function request(headers) {
-  return {
-    headers
-  };
-}
+const sandbox = sinon.createSandbox();
 
-function requestWithBody(headers, body) {
+const tusSpy = sinon.spy(tusServer);
+
+sandbox.stub(tus, 'Server').returns(tusSpy);
+sandbox.stub(tus, 'FileStore').returns(datastore);
+
+const uploaderStub = sandbox.stub();
+
+const baseRequest = {
+  baseUrl: 'http://localhost/v1'
+};
+
+function requestWithBody(method, path, headers, body) {
+  const realHeaders = {};
+  for (const key in headers) {
+    realHeaders[key.toLowerCase()] = headers[key];
+  }
+
   return {
-    headers,
+    ...baseRequest,
+    method,
+    url: baseRequest.baseUrl + path,
+    header: function(key) {
+      return realHeaders[key.toLowerCase()];
+    },
+    headers: realHeaders,
     body
   };
 }
 
 const uploadRoute = proxyquire('../../server/routes/upload', {
-  'tus-node-server': tusServer
+  'tus-node-server': tus,
+  '../utils': uploaderStub
 });
 
 describe('/api/upload', function() {
-  it('calls TUS.handle() to initialize a resumable upload', async function() {
-    const headers = {
-      'Tus-Resumable': '1.0.0',
-      'X-Request-ID': '7692a8fc-4006-465b-a549-4332970f5f9c',
-      'Upload-Length': 750,
-      'Upload-Metadata': 'filename cGFydGlhbC10eHQtdGVzdGZpbGUtYQ==,filetype'
-    };
-    const req = request(headers);
-    const res = {};
-    await uploadRoute(req, res);
-
-    sinon.assert.calledWith(tusServer.handle, req);
-    sinon.assert.match(res, {
-      Location:
-        'https://localhost/api/upload/aed5db4a763c6e87d4a6e260b2b7bc5c+LdgXmjpvvR7NCr3nndJNaAyVm4Pm9O3f2QVOWBXtcOT8cc7_tljrCikos7jfY0vaum6lBUEtAfI49arApgI33Ac9kU9XC2hWxPbPEC59T0dzf_h5rhJvzNUJksrmTaw5',
-      'Tus-Resumable': '1.0.0'
-    });
+  afterEach(function() {
+    sandbox.restore();
   });
 
-  it('calls TUS.handle() to upload a first part of the file', async function() {
-    const headers = {
-      'Tus-Resumable': '1.0.0',
-      'X-Request-ID': '7c9fee68-17df-4c28-a3ad-99484023996e',
-      'Upload-Offset': 0,
-      'Content-Type': 'application/offset+octet-stream'
-    };
-    const fileBuffer = fs.readFileSync('/fixtures/partial-txt-testfile_a');
-    const req = requestWithBody(headers, fileBuffer);
-    const res = {};
-    await uploadRoute(req, res);
-
-    sinon.assert.calledWith(tusServer.handle, req);
-    sinon.assert.match(res, {
-      'Tus-Resumable': '1.0.0',
-      'Upload-Offset': 750
-    });
-  });
-
-  it('calls TUS.handle() to upload a second (last) part of the file', async function() {
-    const headers = {
-      'Tus-Resumable': '1.0.0',
-      'X-Request-ID': '7c9fee68-17df-4c28-a3ad-99484023996t',
-      'Upload-Offset': 750,
-      'Content-Type': 'application/offset+octet-stream'
-    };
-    const fileBuffer = fs.readFileSync('/fixtures/partial-txt-testfile_b');
-    const req = requestWithBody(headers, fileBuffer);
-    const res = {};
-    await uploadRoute(req, res);
-
-    sinon.assert.calledWith(tusServer.handle, req);
-    sinon.assert.match(res, {
-      'Tus-Resumable': '1.0.0',
-      'Upload-Offset': 1246
-    });
+  after(function() {
+    fs.rmSync(config.file_dir, { recursive: true, force: true });
   });
 
   it('Does not call TUS.handle for a standard upload', async function() {
@@ -87,10 +62,66 @@ describe('/api/upload', function() {
       'X-File-Metadata': 'test',
       Authorization: 'correct_token.correct_token.correct_token'
     };
-    const req = request(headers);
-    const res = {};
+    const req = requestWithBody('POST', '/api/files', headers);
+    const res = sandbox.spy(new ServerResponse(req));
+
     await uploadRoute(req, res);
 
-    sinon.assert.notCalled(tusServer.handle);
+    sinon.assert.notCalled(tusSpy.handle);
+    sinon.assert.calledOnce(uploaderStub);
+  });
+
+  it('calls TUS.handle() to initialize a resumable upload', async function() {
+    const headers = {
+      'Tus-Resumable': '1.0.0',
+      'Upload-Length': 750,
+      'Upload-Metadata': 'filename cGFydGlhbC10eHQtdGVzdGZpbGUtYQ=='
+    };
+    const req = requestWithBody('POST', '/api/files', headers, '{}');
+    const res = sandbox.spy(new ServerResponse(req));
+    await uploadRoute(req, res);
+
+    sinon.assert.called(tusSpy.handle);
+    tusSpy.handle.getCall(0).calledWithExactly(req, res);
+
+    assert.equal(res.getHeader('Tus-Resumable'), '1.0.0');
+  });
+
+  it('calls TUS.handle() to upload a first part of the file', async function() {
+    const headers = {
+      'Tus-Resumable': '1.0.0',
+      'Upload-Offset': 0,
+      'Content-Type': 'application/offset+octet-stream'
+    };
+    const fileBuffer = fs.readFileSync(
+      path.join(__dirname, 'fixtures', 'partial-txt-testfile-a')
+    );
+    const req = requestWithBody('PATCH', '/api/files', headers, fileBuffer);
+    const res = sandbox.spy(new ServerResponse(req));
+    await uploadRoute(req, res);
+
+    sinon.assert.called(tusSpy.handle);
+    tusSpy.handle.getCall(1).calledWithExactly(req, res);
+
+    assert.equal(res.getHeader('Tus-Resumable'), '1.0.0');
+  });
+
+  it('calls TUS.handle() to upload a second (last) part of the file', async function() {
+    const headers = {
+      'Tus-Resumable': '1.0.0',
+      'Upload-Offset': 750,
+      'Content-Type': 'application/offset+octet-stream'
+    };
+    const fileBuffer = fs.readFileSync(
+      path.join(__dirname, 'fixtures', 'partial-txt-testfile-b')
+    );
+    const req = requestWithBody('PATCH', '/api/files', headers, fileBuffer);
+    const res = sandbox.spy(new ServerResponse(req));
+    await uploadRoute(req, res);
+
+    sinon.assert.called(tusSpy.handle);
+    tusSpy.handle.getCall(2).calledWithExactly(req, res);
+
+    assert.equal(res.getHeader('Tus-Resumable'), '1.0.0');
   });
 });
