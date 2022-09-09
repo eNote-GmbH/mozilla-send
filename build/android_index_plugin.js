@@ -1,5 +1,6 @@
 const path = require('path');
 const html = require('choo/html');
+const { sources, Compilation } = require('webpack');
 const NAME = 'AndroidIndexPlugin';
 
 function chunkFileNames(compilation) {
@@ -15,7 +16,7 @@ function chunkFileNames(compilation) {
 }
 class AndroidIndexPlugin {
   apply(compiler) {
-    compiler.hooks.emit.tap(NAME, compilation => {
+    compiler.hooks.compilation.tap(NAME, (compilation) => {
       const files = chunkFileNames(compilation);
       const page = html`
         <html lang="en-US">
@@ -35,14 +36,16 @@ class AndroidIndexPlugin {
       `
         .toString()
         .replace(/\n\s{6}/g, '\n');
-      compilation.assets['android.html'] = {
-        source() {
-          return page;
+
+      compilation.hooks.processAssets.tap(
+        {
+          name: NAME,
+          stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
         },
-        size() {
-          return page.length;
+        () => {
+          compilation.emitAsset('android.html', new sources.RawSource(page));
         }
-      };
+      );
     });
   }
 }

@@ -17,9 +17,7 @@ import share from './pages/share';
 import preferences from './pages/preferences';
 import error from './pages/error';
 import { getTranslator } from '../app/locale';
-import { setTranslate } from '../app/utils';
-
-import { delay } from '../app/utils';
+import { delay, setTranslate } from '../app/utils';
 
 if (navigator.userAgent === 'Send Android') {
   setApiUrlPrefix('https://send.firefox.com');
@@ -30,7 +28,7 @@ const app = choo();
 app.use(controller);
 app.use(intents);
 
-window.finishLogin = async function(accountInfo) {
+window.finishLogin = async function (accountInfo) {
   while (!(app.state && app.state.user)) {
     await delay();
   }
@@ -40,7 +38,7 @@ window.finishLogin = async function(accountInfo) {
 };
 
 function body(main) {
-  return function(state, emit) {
+  return function (state, emit) {
     /*
       Disable the preferences menu for now since it is ugly and isn't
       relevant to the beta
@@ -69,13 +67,13 @@ function body(main) {
   const translate = await getTranslator('en-US');
   setTranslate(translate);
   const { LIMITS, WEB_UI, DEFAULTS } = await getConstants();
-  app.use(state => {
+  app.use((state) => {
     state.LIMITS = LIMITS;
     state.WEB_UI = WEB_UI;
     state.DEFAULTS = DEFAULTS;
     state.translate = translate;
     state.capabilities = {
-      account: true
+      account: true,
     }; //TODO
     state.archive = new Archive(
       [],

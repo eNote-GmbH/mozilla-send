@@ -1,5 +1,5 @@
 import assets from '../common/assets';
-import { version } from '../package.json';
+import pkg from '../package.json';
 import Keychain from './keychain';
 import { downloadStream } from './api';
 import { transformStream } from './streams';
@@ -17,7 +17,7 @@ self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim().then(precache));
 });
 
@@ -53,7 +53,7 @@ async function decryptStream(id) {
         transform(chunk, controller) {
           file.progress += chunk.length;
           controller.enqueue(chunk);
-        }
+        },
       },
       function oncancel() {
         // NOTE: cancel doesn't currently fire on chrome
@@ -66,7 +66,7 @@ async function decryptStream(id) {
     const headers = {
       'Content-Disposition': contentDisposition(file.filename),
       'Content-Type': type,
-      'Content-Length': size
+      'Content-Length': size,
     };
     return new Response(responseStream, { headers });
   } catch (e) {
@@ -77,8 +77,8 @@ async function decryptStream(id) {
     return new Response(null, {
       status: 302,
       headers: {
-        Location: `/download/${id}/#${file.key}`
-      }
+        Location: `/download/${id}/#${file.key}`,
+      },
     });
   }
 }
@@ -86,7 +86,7 @@ async function decryptStream(id) {
 async function precache() {
   try {
     await cleanCache();
-    const cache = await caches.open(version);
+    const cache = await caches.open(pkg.version);
     const images = assets.match(IMAGES);
     await cache.addAll(images);
   } catch (e) {
@@ -98,7 +98,7 @@ async function precache() {
 async function cleanCache() {
   const oldCaches = await caches.keys();
   for (const c of oldCaches) {
-    if (c !== version) {
+    if (c !== pkg.version) {
       await caches.delete(c);
     }
   }
@@ -109,7 +109,7 @@ function cacheable(url) {
 }
 
 async function cachedOrFetched(req) {
-  const cache = await caches.open(version);
+  const cache = await caches.open(pkg.version);
   const cached = await cache.match(req);
   if (cached) {
     return cached;
@@ -121,7 +121,7 @@ async function cachedOrFetched(req) {
   return fetched;
 }
 
-self.onfetch = event => {
+self.onfetch = (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
@@ -133,7 +133,7 @@ self.onfetch = event => {
   }
 };
 
-self.onmessage = event => {
+self.onmessage = (event) => {
   if (event.data.request === 'init') {
     noSave = event.data.noSave;
     const info = {
@@ -147,7 +147,7 @@ self.onmessage = event => {
       manifest: event.data.manifest,
       size: event.data.size,
       dlToken: event.data.dlToken,
-      progress: 0
+      progress: 0,
     };
     map.set(event.data.id, info);
 

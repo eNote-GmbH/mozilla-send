@@ -2,10 +2,9 @@ const ece = require('http_ece');
 
 import assert from 'assert';
 import Archive from '../../../app/archive';
-import { b64ToArray } from '../../../app/utils';
+import { b64ToArray, concat, encryptedSize } from '../../../app/utils';
 import { blobStream, concatStream } from '../../../app/streams';
 import { decryptStream, encryptStream } from '../../../app/ece.js';
-import { encryptedSize, concat } from '../../../app/utils';
 
 const rs = 36;
 
@@ -19,15 +18,15 @@ const params = {
   rs: rs,
   salt: testSalt,
   keyid: '',
-  key: keystr
+  key: keystr,
 };
 
 const encrypted = ece.encrypt(buffer, params);
 const decrypted = ece.decrypt(encrypted, params);
 
-describe('Streaming', function() {
-  describe('blobStream', function() {
-    it('reads the entire blob', async function() {
+describe('Streaming', function () {
+  describe('blobStream', function () {
+    it('reads the entire blob', async function () {
       const len = 12345;
       const chunkSize = 1024;
       const blob = new Blob([new Uint8Array(len)]);
@@ -44,8 +43,8 @@ describe('Streaming', function() {
     });
   });
 
-  describe('concatStream', function() {
-    it('reads all the streams', async function() {
+  describe('concatStream', function () {
+    it('reads all the streams', async function () {
       const count = 5;
       const len = 12345;
       const streams = Array.from({ length: count }, () =>
@@ -64,11 +63,11 @@ describe('Streaming', function() {
   });
 
   //testing against http_ece's implementation
-  describe('ECE', function() {
+  describe('ECE', function () {
     const key = b64ToArray(keystr);
     const salt = b64ToArray(testSalt).buffer;
 
-    it('can encrypt', async function() {
+    it('can encrypt', async function () {
       const stream = new Archive([new Blob([str], { type: 'text/plain' })])
         .stream;
       const encStream = encryptStream(stream, key, rs, salt);
@@ -85,7 +84,7 @@ describe('Streaming', function() {
       assert.deepEqual(result, new Uint8Array(encrypted));
     });
 
-    it('can decrypt', async function() {
+    it('can decrypt', async function () {
       const stream = new Archive([new Blob([encrypted])]).stream;
       const decStream = decryptStream(stream, key, rs);
 
@@ -101,8 +100,8 @@ describe('Streaming', function() {
     });
   });
 
-  describe('encryptedSize', function() {
-    it('matches the size of an encrypted buffer', function() {
+  describe('encryptedSize', function () {
+    it('matches the size of an encrypted buffer', function () {
       assert.equal(encryptedSize(buffer.length, rs), encrypted.length);
     });
   });

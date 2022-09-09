@@ -10,9 +10,11 @@ const devRoutes = require('../../server/bin/test');
 const app = express();
 
 const wpm = middleware(webpack(config(null, { mode: 'development' })), {
-  logLevel: 'silent'
+  stats: 'minimal',
+  serverSideRender: true,
 });
 app.use(wpm);
+
 devRoutes(app, { middleware: wpm });
 
 // eslint-disable-next-line no-unused-vars
@@ -21,13 +23,13 @@ function onConsole(msg) {
   // console.error(msg.text());
 }
 
-const server = app.listen(async function() {
+const server = app.listen(async function () {
   let exitCode = -1;
   const browser = await puppeteer.launch({
     args: [
       // puppeteer >= 1.10.0 crashes on Circle CI without this flag set
-      '--no-sandbox'
-    ]
+      '--no-sandbox',
+    ],
   });
   try {
     const page = await browser.newPage();
@@ -35,16 +37,24 @@ const server = app.listen(async function() {
     page.on('pageerror', console.log.bind(console));
     await page.setDefaultNavigationTimeout(60000);
     await page.goto(`http://127.0.0.1:${server.address().port}/test`);
-    await page.waitFor(() => typeof runner.testResults !== 'undefined', {
-      polling: 1000,
-      timeout: 15000
-    });
+    await page.waitForFunction(
+      () => typeof runner.testResults !== 'undefined',
+      {
+        polling: 1000,
+        timeout: 15000,
+      }
+    );
     const results = await page.evaluate(() => runner.testResults);
-    const coverage = await page.evaluate(() => __coverage__);
+    const coverage = await page.evaluate(() => {
+      if (typeof __coverage__ !== 'undefined') {
+        return __coverage__;
+      }
+      return null;
+    });
     if (coverage) {
       const dir = path.resolve(__dirname, '../../.nyc_output');
       fs.mkdirSync(dir, {
-        recursive: true
+        recursive: true,
       });
       fs.writeFileSync(
         path.resolve(dir, 'frontend.json'),

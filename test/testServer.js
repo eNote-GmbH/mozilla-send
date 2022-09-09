@@ -1,8 +1,8 @@
 let server = null;
 
 module.exports = {
-  onPrepare: function() {
-    return new Promise(function(resolve) {
+  onPrepare: function () {
+    return new Promise(function (resolve) {
       const webpack = require('webpack');
       const middleware = require('webpack-dev-middleware');
       const express = require('express');
@@ -12,8 +12,9 @@ module.exports = {
       const tests = require('./frontend/routes');
       const app = express();
       const config = require('../webpack.config');
+
       const wpm = middleware(webpack(config(null, { mode: 'development' })), {
-        logLevel: 'silent'
+        stats: 'minimal',
       });
       app.use(wpm);
       assets.setMiddleware(wpm);
@@ -26,7 +27,7 @@ module.exports = {
       });
     });
   },
-  onComplete: function() {
+  onComplete: function () {
     server.close();
-  }
+  },
 };

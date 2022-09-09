@@ -1,23 +1,25 @@
 const assets = require('../../common/assets');
+const accessLog = require('../middleware/access_log');
 const routes = require('../routes');
 const pages = require('../routes/pages');
 const tests = require('../../test/frontend/routes');
 const express = require('express');
 const expressWs = require('@dannycoates/express-ws');
-const morgan = require('morgan');
 const config = require('../config');
 
 const ID_REGEX = '([0-9a-fA-F]{10, 16})';
 
-module.exports = function(app, devServer) {
+module.exports = function (middlewares, devServer) {
   const wsapp = express();
+  const app = devServer.app;
   expressWs(wsapp, null, { perMessageDeflate: false });
   routes(wsapp);
   wsapp.ws('/api/ws', require('../routes/ws'));
   wsapp.listen(8081, config.listen_address);
 
   assets.setMiddleware(devServer.middleware);
-  app.use(morgan('dev', { stream: process.stderr }));
+  middlewares.push(devServer.middleware);
+  middlewares.push(accessLog);
   function android(req, res) {
     const index = devServer.middleware.fileSystem
       .readFileSync(devServer.middleware.getFilenameFromUrl('/android.html'))
@@ -43,4 +45,5 @@ module.exports = function(app, devServer) {
   // webpack-dev-server routes haven't been added yet
   // so wait for next tick to add 404 handler
   process.nextTick(() => app.use(pages.notfound));
+  return middlewares;
 };

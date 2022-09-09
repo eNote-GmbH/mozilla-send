@@ -6,10 +6,16 @@ import okDialog from './ui/okDialog';
 import shareDialog from './ui/shareDialog';
 import signupDialog from './ui/signupDialog';
 import surveyDialog from './ui/surveyDialog';
-import { bytes, locale } from './utils';
-import { copyToClipboard, delay, openLinksInNewTab, percent } from './utils';
+import {
+  bytes,
+  copyToClipboard,
+  delay,
+  locale,
+  openLinksInNewTab,
+  percent,
+} from './utils';
 
-export default function(state, emitter) {
+export default function (state, emitter) {
   let lastRender = 0;
   let updateTitle = false;
 
@@ -47,7 +53,7 @@ export default function(state, emitter) {
     lastRender = Date.now();
   });
 
-  emitter.on('login', email => {
+  emitter.on('login', (email) => {
     state.user.login(email);
   });
 
@@ -56,7 +62,7 @@ export default function(state, emitter) {
     emitter.emit('pushState', '/');
   });
 
-  emitter.on('removeUpload', file => {
+  emitter.on('removeUpload', (file) => {
     state.archive.remove(file);
     if (state.archive.numFiles === 0) {
       state.archive.clear();
@@ -64,7 +70,7 @@ export default function(state, emitter) {
     render();
   });
 
-  emitter.on('delete', async ownedFile => {
+  emitter.on('delete', async (ownedFile) => {
     try {
       state.storage.remove(ownedFile.id);
       await ownedFile.del();
@@ -94,21 +100,21 @@ export default function(state, emitter) {
       state.modal = okDialog(
         state.translate(e.message, {
           size: bytes(maxSize),
-          count: state.LIMITS.MAX_FILES_PER_ARCHIVE
+          count: state.LIMITS.MAX_FILES_PER_ARCHIVE,
         })
       );
     }
     render();
   });
 
-  emitter.on('signup-cta', source => {
+  emitter.on('signup-cta', (source) => {
     const query = state.query;
     state.user.startAuthFlow(source, {
       campaign: query.utm_campaign,
       content: query.utm_content,
       medium: query.utm_medium,
       source: query.utm_source,
-      term: query.utm_term
+      term: query.utm_term,
     });
     state.modal = signupDialog();
     render();
@@ -131,7 +137,7 @@ export default function(state, emitter) {
     if (state.storage.files.length >= state.LIMITS.MAX_ARCHIVES_PER_USER) {
       state.modal = okDialog(
         state.translate('tooManyArchives', {
-          count: state.LIMITS.MAX_ARCHIVES_PER_USER
+          count: state.LIMITS.MAX_ARCHIVES_PER_USER,
         })
       );
       return render();
@@ -158,7 +164,7 @@ export default function(state, emitter) {
       if (archive.password) {
         emitter.emit('password', {
           password: archive.password,
-          file: ownedFile
+          file: ownedFile,
         });
       }
       state.modal = state.capabilities.share
@@ -177,7 +183,7 @@ export default function(state, emitter) {
       } else {
         // eslint-disable-next-line no-console
         console.error(err);
-        state.sentry.withScope(scope => {
+        state.sentry.withScope((scope) => {
           scope.setExtra('duration', err.duration);
           scope.setExtra('size', err.size);
           state.sentry.captureException(err);
@@ -241,7 +247,7 @@ export default function(state, emitter) {
     try {
       const dl = state.transfer.download({
         stream: state.capabilities.streamDownload,
-        storage: state.storage
+        storage: state.storage,
       });
       render();
       await dl;
@@ -259,7 +265,7 @@ export default function(state, emitter) {
           ? '/404'
           : '/error';
         if (location === '/error') {
-          state.sentry.withScope(scope => {
+          state.sentry.withScope((scope) => {
             scope.setExtra('duration', err.duration);
             scope.setExtra('size', err.size);
             scope.setExtra('progress', err.progress);

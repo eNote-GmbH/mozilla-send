@@ -311,7 +311,7 @@ select {
 
 @tailwind utilities;
 
-@responsive {
+@layer utilities {
   .shadow-light {
     box-shadow: 0 0 8px 0 rgb(12 12 13 / 10%);
   }
@@ -322,7 +322,7 @@ select {
   }
 }
 
-@variants focus {
+@layer utilities {
   .outline {
     outline: 1px dotted grey;
   }

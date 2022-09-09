@@ -77,7 +77,7 @@ A file sharing experiment which allows you to send encrypted files to other user
 
 ## Requirements
 
-- [Node.js 16.x](https://nodejs.org/)
+- [Node.js 18.x](https://nodejs.org/)
 - [Redis server](https://redis.io/) (optional for development)
 - [AWS S3](https://aws.amazon.com/s3/) or compatible service (optional)
 
@@ -106,6 +106,7 @@ Then, browse to http://localhost:8080
 | `npm start`      | Runs the server in development configuration.
 | `npm run build`  | Builds the production assets.
 | `npm run prod`   | Runs the server in production configuration.
+| `npm run docker` | Builds the Docker image
 
 ---
 
@@ -167,120 +168,139 @@ located in the `android/app/src/main/assets` directory.
 
 ---
 
-## Partial upload
+## Resumable upload (plain HTTP)
 
-The tests are not (yet?) properly implemented, so here's the example for the partial file upload.
+> Please note that using the plain HTTP API does not mandate encryption, for
+> which the client is responsible of. As such, also completely unprotected
+> data can be uploaded, but they will not be shareable via the web interface.
 
-Please, note that the example is supposed to be run inside the [send-docker-compose](https://github.com/eNote-GmbH/send-docker-compose) folder while service is running.
+The server-side implementation ([Tus protocol](https://tus.io/protocols/resumable-upload.html))
+stores incomplete files into a local directory, by default under the temporary
+directory, but can be explicitly configured by specifying an absolute local
+directory path (best using environment variable `RESUMABLE_FILE_DIR`).
 
-Let's imagine we are going to upload the `docker-compose.yaml` file.
+The API to use this is protected with FxA OAuth authentication to avoid
+exploitation of this functionality by anonymous clients.
 
-First, let's split the file into two parts (the size of a part would be 750 bytes):
+The API flow can be summarized as follows:
 
-```
-split -b 750 docker-compose.yaml partial_file
-```
-The next step is to create the endpoint for the file upload:
+1. initiate a resumable upload: `POST /api/upload`
+2. upload chunks of data: `PATCH /api/upload/<id>`
+3. complete the file upload: `POST /api/upload/<id>/done`
 
-```bash
-curl -X POST -i 'http://localhost:1234/files/' -H 'Tus-Resumable: 1.0.0' -H 'Upload-Length: 1495' -H 'Authorization: Bearer correct_token.correct_token.correct_token'
-```
+While you also can simply upload a complete file in one request to the
+`/api/upload` endpoint, the following criteria must be met to detect a
+resumable upload:
 
-The result would be
+* HTTP request header `Upload-Length` must be specified (total file size in
+  bytes)
+* HTTP request must not have a body payload (HTTP header `Content-Length`
+  should be absent as well)
 
-```
-HTTP/1.1 201 Created
-...
-Tus-Resumable: 1.0.0
-Access-Control-Expose-Headers: Authorization, Content-Type, Location, Tus-Extension, Tus-Max-Size, Tus-Resumable, Tus-Version, Upload-Concat, Upload-Defer-Length, Upload-Length, Upload-Metadata, Upload-Offset, X-HTTP-Method-Override, X-Requested-With
-Location: //localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26
-Content-Length: 0
-...
-```
+The responses for resumable uploads will have no payload and all required
+infromation will be delivered to the client via response status code and
+headers.
 
-Please, note the `Location` header, we will use this endpoint for further operations
+### Example
 
-Let's upload the first part of the file (please note the endpoint and the name of the file)
+Let's upload our `package-lock.json` in multiple chunks or 512 KiB each using
+`curl` on the command line.
 
-```bash
-curl -X PATCH -H 'Tus-Resumable: 1.0.0' -H 'Upload-Offset: 0' -H 'Content-Type: application/offset+octet-stream' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -T partial_fileaa -i 'http://localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26'
-```
-
-The response
-
-```
-HTTP/1.1 100 Continue
-
-HTTP/1.1 204 No Content
-...
-Tus-Resumable: 1.0.0
-Access-Control-Expose-Headers: Authorization, Content-Type, Location, Tus-Extension, Tus-Max-Size, Tus-Resumable, Tus-Version, Upload-Concat, Upload-Defer-Length, Upload-Length, Upload-Metadata, Upload-Offset, X-HTTP-Method-Override, X-Requested-With
-Upload-Offset: 750
-...
-```
-
-We can check the current state of the file
+In order to copy the file into desired chunks, we can use a command like this:
 
 ```bash
-curl -X HEAD -H 'Tus-Resumable: 1.0.0' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -I 'http://localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26'
+split -b 512K --additional-suffix=.chunk package-lock.json data.
 ```
 
-The response
-
-```
-HTTP/1.1 200 OK
-...
-Upload-Offset: 750
-Upload-Length: 1495
-...
-```
-
-Let's upload the second part:
+...which will give us the following files (overall size and number of chunks
+may differ for you):
 
 ```bash
-curl -X PATCH -H 'Tus-Resumable: 1.0.0' -H 'Upload-Offset: 750' -H 'Content-Type: application/offset+octet-stream' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -T partial_fileab -i 'http://localhost:1234/files/49fa07eb359a76416c6825f91c3c7c26'
+$ ls -1sk data.*.chunk
+512 data.aa.chunk
+512 data.ab.chunk
+508 data.ac.chunk
 ```
 
-The response
+> If your system does not have the `split` command, you should have a similar
+> command available or install the [GNU core utilities](https://www.gnu.org/software/coreutils/).
 
-```
-HTTP/1.1 100 Continue
-
-HTTP/1.1 204 No Content
-...
-Tus-Resumable: 1.0.0
-Access-Control-Expose-Headers: Authorization, Content-Type, Location, Tus-Extension, Tus-Max-Size, Tus-Resumable, Tus-Version, Upload-Concat, Upload-Defer-Length, Upload-Length, Upload-Metadata, Upload-Offset, X-HTTP-Method-Override, X-Requested-With
-Upload-Offset: 1495
-...
-```
-
-And finally put the file to the storage:
+**Initiate resumable upload**:
 
 ```bash
-curl -X POST -H 'X-File-Metadata: mwSjvpb1OdHVAFwJGnorKpxaAghiWKAJIOETO4vqUa2lCpR0oPpj3d9XqctrYBZf_0lgUguRdYjvpgpcOyE8gw' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -H 'Content-Type: application/octet-stream' -i 'http://localhost:1234/api/upload/done/49fa07eb359a76416c6825f91c3c7c26'
+curl -v 'http://localhost:1234/api/upload' \
+    --header "Authorization: Bearer ${OAUTH_TOKEN}" \
+    -X POST \
+    --header 'Upload-Length: 1564869'
 ```
 
-The response
+...which will respond with HTTP status `201` (created), a bunch of useful
+headers, most noteably `Location`, which contains the actual URL to continue
+with uploading the chunks, e.g.:
 
 ```
-HTTP/1.1 200 OK
-...
-WWW-Authenticate: send-v1 ZkDjEJDWP2FDLTszl+BGEA==
-Content-Type: application/json; charset=utf-8
-Content-Length: 113
-ETag: W/"71-VlrXKB07UXkePjLjcoa+P8ecgro"
-...
-{"url":"http://localhost:1234/download/f52169e2a822287d/","owner":"cb7cd6130108ab70b596","id":"f52169e2a822287d"}
+Location: http://localhost:1234/api/upload/d77b41ebfc81e100c2c8f33cd68702b8
 ```
 
-If the file is small enough, it can be uploaded in one part
+**Upload data chunks**:
 
+Now that we have our specific endpoint, we can upload our chunks, which will
+be done using commands as follows:
+
+```bash
+curl -v 'http://localhost:1234/api/upload/d77b41ebfc81e100c2c8f33cd68702b8' \
+    --header "Authorization: Bearer ${OAUTH_TOKEN}" \
+    -X PATCH \
+    --header 'Content-Type: application/offset+octet-stream' \
+    --header 'Upload-Offset: 0' \
+    --data-binary @data.aa.chunk
 ```
-curl -X POST -i 'http://localhost:1234/files/' -H 'Tus-Resumable: 1.0.0' -H 'Upload-Length: 12345678' -H 'Authorization: Bearer correct_token.correct_token.correct_token'
 
-curl -X PATCH -H 'Tus-Resumable: 1.0.0' -H 'Upload-Offset: 0' -H 'Content-Type: application/offset+octet-stream' -H 'Authorization: Bearer correct_token.correct_token.correct_token' --upload-file ./docker-compose.yaml -i 'http://localhost:1234/files/b5fd3212cefdef45a716ac5c14e4efe2'
+Please note here, that we need to specify the byte-offset of the chunk we are
+uploading, since there is no information in the data chunk itself where it is
+located within the complete file.
 
-curl -X POST -H 'X-File-Metadata: mwSjvpb1OdHVAFwJGnorKpxaAghiWKAJIOETO4vqUa2lCpR0oPpj3d9XqctrYBZf_0lgUguRdYjvpgpcOyE8gw' -H 'Authorization: Bearer correct_token.correct_token.correct_token' -H 'Content-Type: application/octet-stream' -i 'http://localhost:1234/api/upload/done/b5fd3212cefdef45a716ac5c14e4efe2'
+Also note that if you try to re-upload an already-completed data chunk or
+upload a chunk out-of-order (e.g. leaving a chunk out), the service will
+respond with a HTTP `409` (conflict). This also means that concurrently
+uploading data chunks is not allowed.
+
+A successful chunk upload will respond with a HTTP `204` (no content) and
+return the next offset re-using the header `Upload-Offset` in the response,
+which would be `524288` for our first chunk, but `1048576` for the second.
+
+When the last chunk has been uploaded, the value of the `Upload-Offset`
+response  header will be equal to the file size in bytes and signal a
+data-completion of the upload.
+
+**Finalize upload**:
+
+The last remaining step is to finalize the upload, for which we can also
+specify additional metadata as for single-request uploads (just append `/done`
+to the resumable chunk upload URL):
+
+```bash
+curl -v 'http://localhost:1234/api/upload/d77b41ebfc81e100c2c8f33cd68702b8/done' \
+    --header "Authorization: Bearer ${OAUTH_TOKEN}" \
+    -X POST \
+    --header 'Content-Type: application/octet-stream' \
+    --header 'X-File-Metadata: eyJmaWxlbmFtZSI6InBhY2thZ2UtbG9jay5qc29uIn0K'
 ```
 
----
+...which will respond with a HTTP `200` (OK) and a JSON response as follows:
+
+```json
+{
+  "url": "http://localhost:1234/api/download/eae1d3af22abfa0b",
+  "owner": "e114ec6ec5bf228bf046",
+  "id": "eae1d3af22abfa0b"
+}
+```
+
+## Chunked download (plain HTTP)
+
+In order to support parallel and/or resumable downloads of large files,
+the download API endpoint (at `/api/download/...`) also supports the standard
+HTTP [`Range`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range)
+header.
+

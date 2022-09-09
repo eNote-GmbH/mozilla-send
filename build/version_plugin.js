@@ -1,5 +1,6 @@
 const gitRevSync = require('git-rev-sync');
 const pkg = require('../package.json');
+const { sources, Compilation } = require('webpack');
 
 let commit = 'unknown';
 
@@ -12,20 +13,21 @@ try {
 const version = JSON.stringify({
   commit,
   source: pkg.homepage,
-  version: process.env.CIRCLE_TAG || `v${pkg.version}`
+  version: process.env.CIRCLE_TAG || `v${pkg.version}`,
 });
 
 class VersionPlugin {
   apply(compiler) {
-    compiler.hooks.emit.tap('VersionPlugin', compilation => {
-      compilation.assets['version.json'] = {
-        source() {
-          return version;
+    compiler.hooks.compilation.tap('VersionPlugin', (compilation) => {
+      compilation.hooks.processAssets.tap(
+        {
+          name: 'VersionPlugin',
+          stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL,
         },
-        size() {
-          return version.length;
+        () => {
+          compilation.emitAsset('version.json', new sources.RawSource(version));
         }
-      };
+      );
     });
   }
 }

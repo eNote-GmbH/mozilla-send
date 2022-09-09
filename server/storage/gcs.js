@@ -3,6 +3,10 @@ const storage = new Storage();
 
 class GCSStorage {
   constructor(config, log) {
+    log.info('gcs', {
+      msg: 'Initializing Google Cloud Storage storage backend',
+      gcs_bucket: config.gcs_bucket,
+    });
     this.bucket = storage.bucket(config.gcs_bucket);
     this.log = log;
   }
@@ -12,8 +16,15 @@ class GCSStorage {
     return data[0].size;
   }
 
-  getStream(id) {
-    return this.bucket.file(id).createReadStream({ validation: false });
+  async getStream(id, range) {
+    const options = {
+      validation: false,
+    };
+    if (range) {
+      options.start = range.start;
+      options.end = range.end;
+    }
+    return this.bucket.file(id).createReadStream(options);
   }
 
   set(id, file) {
@@ -22,7 +33,7 @@ class GCSStorage {
         .pipe(
           this.bucket.file(id).createWriteStream({
             validation: false,
-            resumable: true
+            resumable: true,
           })
         )
         .on('error', reject)
