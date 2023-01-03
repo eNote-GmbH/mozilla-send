@@ -67,8 +67,9 @@ describe('/api/upload', function () {
     const headers = {
       'X-File-Metadata': 'test',
       Authorization: 'correct_token.correct_token.correct_token',
+      'Content-Length': 2,
     };
-    const req = requestWithBody('POST', '/api/upload', headers);
+    const req = requestWithBody('POST', '/api/upload', headers, '{}');
     const res = sandbox.spy(new ServerResponse(req));
 
     await uploadRoute(req, res);
@@ -82,12 +83,33 @@ describe('/api/upload', function () {
       'Upload-Length': 750,
       'Upload-Metadata': 'filename cGFydGlhbC10eHQtdGVzdGZpbGUtYQ==',
     };
-    const req = requestWithBody('POST', '/api/upload', headers, '{}');
+    const req = requestWithBody('POST', '/api/upload', headers);
     const res = sandbox.spy(new ServerResponse(req));
     await uploadRoute(req, res);
 
     sinon.assert.called(tusSpy.handle);
     tusSpy.handle.getCall(0).calledWithExactly(req, res);
+
+    assert.notEqual(res.getHeader('Location'), undefined);
+    assert.equal(
+      res.getHeader('Location').slice(0, -32),
+      'http://localhost/v1/api/upload/'
+    );
+    uploadId = res.getHeader('Location').slice(-32);
+  });
+
+  it('calls TUS.handle() to initialize a resumable upload with zero Content-Length', async function () {
+    const headers = {
+      'Upload-Length': '750',
+      'Upload-Metadata': 'filename cGFydGlhbC10eHQtdGVzdGZpbGUtYQ==',
+      'Content-Length': '0',
+    };
+    const req = requestWithBody('POST', '/api/upload', headers);
+    const res = sandbox.spy(new ServerResponse(req));
+    await uploadRoute(req, res);
+
+    sinon.assert.called(tusSpy.handle);
+    tusSpy.handle.getCall(1).calledWithExactly(req, res);
 
     assert.notEqual(res.getHeader('Location'), undefined);
     assert.equal(

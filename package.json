@@ -25,7 +25,7 @@
     "contributors": "git shortlog -s | awk -F\\t '{print $2}' > CONTRIBUTORS",
     "release": "npm-run-all contributors changelog",
     "test": "npm-run-all test:*",
-    "test:backend": "nyc --reporter=lcovonly mocha --reporter=min test/backend",
+    "test:backend": "nyc --reporter=lcovonly mocha test/backend",
     "test:frontend": "cross-env NODE_ENV=development FXA_URL=mock node test/frontend/runner.js",
     "test:report": "nyc report --reporter=html",
     "test-integration": "cross-env NODE_ENV=development wdio run test/wdio.docker.conf.js",

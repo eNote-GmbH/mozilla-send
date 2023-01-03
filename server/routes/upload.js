@@ -48,8 +48,8 @@ const isResumableRequest = function (req) {
     return true;
   }
 
-  if (req.method === 'POST') {
-    return req.header('Upload-Length') && !req.header('Content-Length');
+  if (req.method === 'POST' && req.header('Upload-Length')) {
+    return !req.header('Content-Length') || String(req.header('Content-Length')) === '0';
   }
 
   return false;
