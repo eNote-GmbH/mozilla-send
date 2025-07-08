@@ -36,7 +36,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    needs: prepare-build
     container: node:18
     steps:
       - uses: actions/checkout@v4
