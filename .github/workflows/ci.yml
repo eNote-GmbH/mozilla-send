@@ -79,35 +79,6 @@ jobs:
           tags: ${{ steps.docker-metadata.outputs.tags }}
           labels: ${{ steps.docker-metadata.outputs.labels }}
 
-  db-migrations-docker-build:
-    name: DB Migrations Docker Build
-    runs-on: ubuntu-latest
-    needs: [prepare]
-    if: github.ref == 'refs/heads/enote'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: docker-metadata
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}-db-migrations
-          tags: |
-            type=raw,value=${{ needs.prepare.outputs.APP_VERSION_TAG }}
-      - name: Build and push Docker image
-        id: push
-        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
-        with:
-          context: .
-          file: db/Dockerfile.migration
-          push: true
-          tags: ${{ steps.docker-metadata.outputs.tags }}
-          labels: ${{ steps.docker-metadata.outputs.labels }}
-
   docker-release:
     name: Docker Retag (Release)
     runs-on: ubuntu-latest
@@ -119,7 +90,6 @@ jobs:
         run: |
           crane auth login -u $USER -p $PASS $REGISTRY
           crane tag ${REGISTRY}/${IMAGE_NAME}:${FROM_TAG} ${TAG}
-          crane tag ${REGISTRY}/${IMAGE_NAME}-db-migrations:${FROM_TAG} ${TAG}
         env:
           APP_VERSION_TAG: ${{ needs.prepare.outputs.APP_VERSION_TAG }}
           USER: ${{ github.actor }}
@@ -131,7 +101,7 @@ jobs:
 
   deploy-staging:
     name: Deploy to Staging
-    needs: [prepare, docker-build, db-migrations-docker-build]
+    needs: [prepare, docker-build]
     if: github.ref == 'refs/heads/enote'
     runs-on: ubuntu-latest
     steps:
