@@ -3,7 +3,7 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - main
+      - enote
     tags:
       - 'v*'
   pull_request:
@@ -55,7 +55,7 @@ jobs:
     name: Docker Build
     runs-on: ubuntu-latest
     needs: [prepare]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/enote'
     steps:
       - uses: actions/checkout@v4
       - name: Log in to the Container registry
@@ -83,7 +83,7 @@ jobs:
     name: DB Migrations Docker Build
     runs-on: ubuntu-latest
     needs: [prepare]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/enote'
     steps:
       - uses: actions/checkout@v4
       - name: Log in to the Container registry
@@ -132,7 +132,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     needs: [prepare, docker-build, db-migrations-docker-build]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/enote'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
